@@ -2,6 +2,11 @@
 
 
 class User:
+    """
+    In this class, we define a basic structure which represents the very user of this app.
+    There may be some methods, such as looking for the user's average sleeping time over a specific period.
+    """
+
     def __init__(self, username: str, password: str):
         self.username = username
         self.password = password
@@ -12,7 +17,11 @@ class User:
 
 
 class Roommate:
-    def __init__(self, username: str, roommate_id: int):
+    """
+    In this class, we define a interactive structure which represents the user's roommate.
+    """
+
+    def __init__(self, username, roommate_id):
         self.username = username
         self.roommate_id = roommate_id
 
