@@ -41,12 +41,23 @@ class SleepingState(State):
         reason: str | None = None,
     ) -> SleepInterruption:
         """Start tracking one interruption during the current sleep session."""
-        raise NotImplementedError
+        new_SleepInterruption = SleepInterruption(interrupted_at, reason=reason)
+        self.active_interruption = new_SleepInterruption
+        return new_SleepInterruption
 
     def resume_sleeping(self, resumed_at: datetime) -> SleepInterruption:
         """Finish the active interruption and continue the session."""
-        raise NotImplementedError
+        if self.active_interruption:
+            self.active_interruption.ended_at = resumed_at
+            self.session.interruptions.append(self.active_interruption)
+            self.active_interruption = None
+        return self.session.interruptions[-1]
 
     def finalize_sleep(self, ended_at: datetime) -> SleepRecord:
         """Convert the mutable session draft into a finalized SleepRecord."""
-        raise NotImplementedError
+        new_SleepRecord = SleepRecord(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 
+                                        self.session.user_id, self.session.started_at, 
+                                        ended_at, self.session.expected_duration_minutes, 
+                                        self.session.sleep_type, self.session.environment, 
+                                        tuple(self.session.interruptions))
+        return new_SleepRecord
