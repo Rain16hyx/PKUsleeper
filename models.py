@@ -1,82 +1,98 @@
-"""data classes"""
+"""Domain data models for sleep tracking."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
+class SleepType(str, Enum):
+    NIGHT = "night"
+    NAP = "nap"
+
+
+class SleepEnvironment(str, Enum):
+    DORMITORY = "dormitory"
+    HOME = "home"
+    OTHER = "other"
+
+
+@dataclass(slots=True)
 class User:
-    """
-    In this class, we define a basic structure which represents the very user of this app.
-    There may be some methods, such as looking for the user's average sleeping time over a specific period.
-    """
-
-    def __init__(self, username: str, password: str):
-        self.username = username
-        self.password = password
-
-    def __str__(self):
-        print(f"User Information:")
-        print(f"Username: {self.username}; Password: {self.password}")
+    user_id: str
+    username: str
 
 
+@dataclass(slots=True)
 class Roommate:
+    roommate_id: str
+    username: str
+
+
+@dataclass(slots=True)
+class SleepInterruption:
+    started_at: datetime
+    ended_at: datetime | None = None
+    reason: str | None = None
+
+
+@dataclass(slots=True)
+class SleepSessionDraft:
     """
-    In this class, we define a interactive structure which represents the user's roommate.
+    Mutable object used while the user is still sleeping.
+    It becomes a SleepRecord only after wake-up is confirmed.
     """
 
-    def __init__(self, username, roommate_id):
-        self.username = username
-        self.roommate_id = roommate_id
+    user_id: str
+    started_at: datetime
+    expected_duration_minutes: int | None
+    sleep_type: SleepType
+    environment: SleepEnvironment
+    interruptions: list[SleepInterruption] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def __str__(self):
-        print(f"Roommate Information:")
-        print(f"Username: {self.username}; Roommate ID: {self.roommate_id}")
 
-
+@dataclass(frozen=True, slots=True)
 class SleepRecord:
-    def __init__(
-        self,
-        start_time=None,
-        end_time=None,
-        expected_sleep_time=None,
-        sleep_type=None,
-        environment=None,
-    ):
-        self.start_time = start_time
-        self.end_time = end_time
-        self.expected_sleep_time = expected_sleep_time
-        self.sleep_type = sleep_type
-        self.environment = environment
+    """
+    Finalized sleep data stored after the sleeping flow ends.
+    """
 
-    def __str__(self):
-        print(f"Sleep Record:")
-        print(
-            f"Start Time: {self.start_time}; End Time: {self.end_time}; Expected Duration: {self.expected_sleep_time}; Sleep Type: {self.sleep_type}; Sleep Environment: {self.environment}"
-        )
+    record_id: str
+    user_id: str
+    started_at: datetime
+    ended_at: datetime
+    expected_duration_minutes: int | None
+    sleep_type: SleepType
+    environment: SleepEnvironment
+    interruptions: tuple[SleepInterruption, ...] = ()
 
 
+@dataclass(slots=True)
+class SleepReport:
+    record: SleepRecord
+    actual_duration_minutes: int | None = None
+    interruption_count: int | None = None
+    quality_score: float | None = None
+    summary: str | None = None
+
+
+@dataclass(slots=True)
 class SleepGoal:
-    def __init__(self, goal_type: str, difficulty_level: int, target_sleep_time: float):
-        self.goal_type = goal_type
-        self.difficulty_level = difficulty_level
-        self.target_sleep_time = target_sleep_time
-
-    def __str__(self):
-        print(f"Sleep Goal:")
-        print(
-            f"Goal Type: {self.goal_type}; Difficulty Level: {self.difficulty_level}; Target Sleep Time: {self.target_sleep_time}"
-        )
+    goal_id: str
+    goal_type: str
+    target_value: float
+    difficulty_level: int
 
 
+@dataclass(slots=True)
 class SleepAchievement:
-    def __init__(self, achievement_name: str, description: str):
-        self.achievement_name = achievement_name
-        self.description = description
-        self.unlocked = False
+    achievement_id: str
+    name: str
+    description: str
 
-    def __str__(self):
-        print(f"Sleep Achievement:")
-        print(
-            f"Achievement Name: {self.achievement_name}; Description: {self.description}"
-        )
-
-    def fulfilled(self, sleep_data: SleepRecord) -> bool:
-        """check if the achievement criteria are fulfilled based on the user's sleep data"""
-        pass
+    def fulfilled_by(self, record: SleepRecord) -> bool:
+        """Return whether this record satisfies the achievement condition."""
+        raise NotImplementedError
