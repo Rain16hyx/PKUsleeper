@@ -92,6 +92,7 @@ class SleepAchievement:
     achievement_id: str
     name: str
     description: str
+    demands: dict[str, Any]
 
     def fulfilled_by(self, record: SleepRecord) -> bool:
         """Return whether this record satisfies the achievement condition."""

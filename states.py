@@ -55,9 +55,14 @@ class SleepingState(State):
 
     def finalize_sleep(self, ended_at: datetime) -> SleepRecord:
         """Convert the mutable session draft into a finalized SleepRecord."""
-        new_SleepRecord = SleepRecord(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 
-                                        self.session.user_id, self.session.started_at, 
-                                        ended_at, self.session.expected_duration_minutes, 
-                                        self.session.sleep_type, self.session.environment, 
-                                        tuple(self.session.interruptions))
+        new_SleepRecord = SleepRecord(
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            self.session.user_id,
+            self.session.started_at,
+            ended_at,
+            self.session.expected_duration_minutes,
+            self.session.sleep_type,
+            self.session.environment,
+            tuple(self.session.interruptions),
+        )
         return new_SleepRecord

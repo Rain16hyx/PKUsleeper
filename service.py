@@ -23,12 +23,6 @@ class SleepRecordRepository(Protocol):
         raise NotImplementedError
 
 
-class SleepReportBuilder(Protocol):
-    def build(self, record: SleepRecord) -> SleepReport:
-        """Create a report from one finalized sleep record."""
-        raise NotImplementedError
-
-
 class SleepTracker:
     """
     Application service that coordinates state transitions and data persistence.
@@ -63,7 +57,17 @@ class SleepTracker:
         environment: SleepEnvironment,
     ) -> SleepingState:
         """Open a new session and enter SleepingState."""
-        raise NotImplementedError
+        self.active_session = SleepSessionDraft(
+            self.user_id,
+            started_at,
+            expected_duration_minutes,
+            sleep_type,
+            environment,
+            [],
+            {},
+        )
+        self.current_state = SleepingState(self, self.active_session)
+        return self.current_state
 
     def interrupt_sleep(
         self,
@@ -71,18 +75,19 @@ class SleepTracker:
         reason: str | None = None,
     ) -> None:
         """Delegate an interruption event to the current SleepingState."""
-        raise NotImplementedError
+        self.current_state.record_interruption(interrupted_at, reason)
 
     def continue_sleeping(self, resumed_at: datetime) -> None:
         """Delegate a resume event to the current SleepingState."""
-        raise NotImplementedError
+        interruption = self.current_state.resume_sleeping(resumed_at)
+        self.active_session.interruptions.append(interruption)
 
     def wake_up(self, ended_at: datetime) -> SleepRecord:
         """
         Finalize the current session, leave SleepingState,
         persist the record, and optionally build a report.
         """
-        raise NotImplementedError
+        self.current_state.finalize_sleep(ended_at)
 
     def generate_sleep_report(self, record: SleepRecord) -> SleepReport:
         """Create a sleep report through the configured report builder."""
@@ -90,7 +95,7 @@ class SleepTracker:
 
     def is_sleeping(self) -> bool:
         """Return whether the tracker is currently in SleepingState."""
-        raise NotImplementedError
+        return isinstance(self.current_state, SleepingState)
 
 
 class AchievementManager:
@@ -100,17 +105,36 @@ class AchievementManager:
 
     def evaluate(self, record: SleepRecord) -> list[SleepAchievement]:
         """Return achievements unlocked by one record."""
-        raise NotImplementedError
+        unlocked = []
+        for i in range(len(self.all_achievements)):
+            acv = self.all_achievements[i]
+            if acv not in self.unlocked_achievements and acv.fulfilled_by(record):
+                unlocked.append(acv)
+        return unlocked
+
+    def update(self, unlocked: list[SleepAchievement]) -> None:
+        """Add newly unlocked achievements to the user's profile."""
+        self.unlocked_achievements.extend(unlocked)
 
 
 class SleepGoalManager:
     def __init__(self) -> None:
         self.sleep_goals: list[SleepGoal] = []
+        self.completed_goals: list[SleepGoal] = []
 
     def add_goal(self, goal: SleepGoal) -> None:
         """Register one goal for later evaluation."""
-        raise NotImplementedError
+        self.sleep_goals.append(goal)
 
     def evaluate(self, record: SleepRecord) -> list[SleepGoal]:
         """Return goals completed by one record."""
-        raise NotImplementedError
+        completed = []
+        for i in range(len(self.sleep_goals)):
+            goal = self.sleep_goals[i]
+            if goal.fulfilled_by(record):
+                completed.append(goal)
+        return completed
+
+    def update(self, completed: list[SleepGoal]) -> None:
+        """Add newly completed goals to the user's profile."""
+        self.completed_goals.extend(completed)
