@@ -15,6 +15,7 @@ from models import (
     SleepType,
 )
 from states import SleepingState, State
+from utils.data_processing import SleepReportBuilder
 
 
 class SleepRecordRepository(Protocol):
