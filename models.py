@@ -1,4 +1,4 @@
-"""Domain data models for sleep tracking."""
+"""数据类"""
 
 from __future__ import annotations
 

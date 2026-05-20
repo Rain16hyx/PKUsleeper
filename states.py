@@ -1,4 +1,4 @@
-"""State objects for the sleep tracking workflow."""
+"""状态类"""
 
 from __future__ import annotations
 
@@ -18,13 +18,13 @@ class State(ABC):
 
     @abstractmethod
     def name(self) -> str:
-        """Return a stable state name for UI or debugging."""
-        raise NotImplementedError
+        """返回当前状态的名称"""
+        pass
 
 
 class SleepingState(State):
     """
-    State active after the user starts sleeping and before final wake-up.
+    该状态表示用户正在睡觉，负责管理睡眠过程，包括记录睡眠中断和最终生成睡眠记录。
     """
 
     def __init__(self, tracker: "SleepTracker", session: SleepSessionDraft) -> None:
@@ -40,13 +40,13 @@ class SleepingState(State):
         interrupted_at: datetime,
         reason: str | None = None,
     ) -> SleepInterruption:
-        """Start tracking one interruption during the current sleep session."""
+        """开始记录一次睡眠中断事件"""
         new_SleepInterruption = SleepInterruption(interrupted_at, reason=reason)
         self.active_interruption = new_SleepInterruption
         return new_SleepInterruption
 
     def resume_sleeping(self, resumed_at: datetime) -> SleepInterruption:
-        """Finish the active interruption and continue the session."""
+        """完成当前中断并继续睡眠"""
         if self.active_interruption:
             self.active_interruption.ended_at = resumed_at
             self.session.interruptions.append(self.active_interruption)
@@ -54,7 +54,7 @@ class SleepingState(State):
         return self.session.interruptions[-1]
 
     def finalize_sleep(self, ended_at: datetime) -> SleepRecord:
-        """Convert the mutable session draft into a finalized SleepRecord."""
+        """将可变的临时睡眠记录转换为最终的 SleepRecord."""
         new_SleepRecord = SleepRecord(
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             self.session.user_id,

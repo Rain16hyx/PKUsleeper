@@ -1,19 +1,22 @@
-"""sleep data processing functions"""
+"""睡眠数据分析与处理方法"""
 
-from models import SleepRecord
+from models import SleepRecord, SleepReport
 from typing import Protocol
-from models import SleepReport
 
 
 class SleepReportBuilder(Protocol):
     def build(self, record: SleepRecord) -> SleepReport:
-        """Create a report from one finalized sleep record."""
+        """初始化睡眠报告"""
         raise NotImplementedError
 
     def calculate_sleep_quality(record: SleepRecord) -> float:
-        """Calculate a quality score for one sleep record."""
+        """计算单个睡眠记录的质量评分"""
         raise NotImplementedError
 
     def evaluate_environment(record: SleepRecord) -> str:
-        """Evaluate the sleep environment based on one sleep record."""
+        """根据单个睡眠记录评估睡眠环境"""
+        raise NotImplementedError
+
+    def generate_report(record: SleepRecord) -> str:
+        """从单个睡眠记录生成文本报告"""
         raise NotImplementedError

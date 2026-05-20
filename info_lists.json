@@ -1,0 +1,11 @@
+{
+    "Achievements": [
+        {
+            "id": 1,
+            "name": "Fresh Start",
+            "description": "Record a sleep for the first time.",
+            "reward": 10,
+            "demands": {}
+        }
+    ]
+}

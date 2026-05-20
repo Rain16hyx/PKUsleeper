@@ -1,9 +1,8 @@
-"""Application services for sleep tracking."""
+"""服务类"""
 
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Protocol
 
 from models import (
     SleepAchievement,
@@ -16,24 +15,16 @@ from models import (
 )
 from states import SleepingState, State
 from utils.data_processing import SleepReportBuilder
-
-
-class SleepRecordRepository(Protocol):
-    def save(self, record: SleepRecord) -> None:
-        """Persist one finalized sleep record."""
-        raise NotImplementedError
+from storage import SleepRecordRepository
 
 
 class SleepTracker:
     """
-    Application service that coordinates state transitions and data persistence.
-
-    Recommended direction:
-    - UI/controller calls SleepTracker.
-    - SleepTracker delegates in-session behavior to SleepingState.
-    - SleepingState edits SleepSessionDraft.
-    - Wake-up produces SleepRecord.
-    - Repositories/report builders handle storage and analysis afterward.
+    控制睡眠跟踪的核心服务，管理睡眠状态、记录、报告、成就和目标。
+     1. 负责处理睡眠事件（开始、打断、继续、结束），并维护当前状态。
+     2. 通过 SleepRecordRepository 持久化睡眠记录。
+     3. 通过 SleepReportBuilder 生成睡眠报告。
+     4. 评估和更新成就和目标管理器。
     """
 
     def __init__(
@@ -57,7 +48,7 @@ class SleepTracker:
         sleep_type: SleepType,
         environment: SleepEnvironment,
     ) -> SleepingState:
-        """Open a new session and enter SleepingState."""
+        """进入睡眠状态"""
         self.active_session = SleepSessionDraft(
             self.user_id,
             started_at,
@@ -75,27 +66,26 @@ class SleepTracker:
         interrupted_at: datetime,
         reason: str | None = None,
     ) -> None:
-        """Delegate an interruption event to the current SleepingState."""
+        """为当前 SleepingState 记录一次中断事件"""
         self.current_state.record_interruption(interrupted_at, reason)
 
     def continue_sleeping(self, resumed_at: datetime) -> None:
-        """Delegate a resume event to the current SleepingState."""
+        """睡眠中断后继续睡眠"""
         interruption = self.current_state.resume_sleeping(resumed_at)
         self.active_session.interruptions.append(interruption)
 
     def wake_up(self, ended_at: datetime) -> SleepRecord:
-        """
-        Finalize the current session, leave SleepingState,
-        persist the record, and optionally build a report.
-        """
-        self.current_state.finalize_sleep(ended_at)
+        """结束当前阶段，退出睡眠状态"""
+        record = self.current_state.finalize_sleep(ended_at)
+        self.latest_record = record
+        return record
 
     def generate_sleep_report(self, record: SleepRecord) -> SleepReport:
-        """Create a sleep report through the configured report builder."""
+        """创建睡眠记录的分析报告"""
         raise NotImplementedError
 
     def is_sleeping(self) -> bool:
-        """Return whether the tracker is currently in SleepingState."""
+        """返回是否在睡眠状态"""
         return isinstance(self.current_state, SleepingState)
 
 
@@ -105,7 +95,7 @@ class AchievementManager:
         self.unlocked_achievements: list[SleepAchievement] = []
 
     def evaluate(self, record: SleepRecord) -> list[SleepAchievement]:
-        """Return achievements unlocked by one record."""
+        """返回某次睡眠解锁的成就列表"""
         unlocked = []
         for i in range(len(self.all_achievements)):
             acv = self.all_achievements[i]
@@ -114,7 +104,7 @@ class AchievementManager:
         return unlocked
 
     def update(self, unlocked: list[SleepAchievement]) -> None:
-        """Add newly unlocked achievements to the user's profile."""
+        """将新解锁的成就加入已解锁列表"""
         self.unlocked_achievements.extend(unlocked)
 
 
@@ -124,11 +114,11 @@ class SleepGoalManager:
         self.completed_goals: list[SleepGoal] = []
 
     def add_goal(self, goal: SleepGoal) -> None:
-        """Register one goal for later evaluation."""
+        """添加新的睡眠目标到用户的目标列表"""
         self.sleep_goals.append(goal)
 
     def evaluate(self, record: SleepRecord) -> list[SleepGoal]:
-        """Return goals completed by one record."""
+        """返回某次睡眠完成的目标列表"""
         completed = []
         for i in range(len(self.sleep_goals)):
             goal = self.sleep_goals[i]
@@ -137,5 +127,5 @@ class SleepGoalManager:
         return completed
 
     def update(self, completed: list[SleepGoal]) -> None:
-        """Add newly completed goals to the user's profile."""
+        """将新完成的目标加入用户档案"""
         self.completed_goals.extend(completed)
