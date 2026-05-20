@@ -82,7 +82,12 @@ class SleepTracker:
 
     def generate_sleep_report(self, record: SleepRecord) -> SleepReport:
         """创建睡眠记录的分析报告"""
-        raise NotImplementedError
+        self.latest_report = self.report_builder.build(record)
+        return self.latest_report
+
+    def save_record(self, record: SleepRecord) -> None:
+        """将睡眠记录保存到数据存储中"""
+        self.record_repository.save(record)
 
     def is_sleeping(self) -> bool:
         """返回是否在睡眠状态"""
@@ -129,3 +134,20 @@ class SleepGoalManager:
     def update(self, completed: list[SleepGoal]) -> None:
         """将新完成的目标加入用户档案"""
         self.completed_goals.extend(completed)
+
+
+class SleepMapManager:
+    def __init__(self) -> None:
+        self.sleep_maps: dict[str, SleepRecord] = {}
+
+    def evaluate(self):
+        """评估用户是否达成了解锁一个节点的全部要求，并返回解锁的节点"""
+        pass
+
+    def update(self):
+        """将新解锁的节点加入用户档案"""
+        pass
+
+    def get_unlocked_nodes(self):
+        """返回用户已解锁的节点列表"""
+        pass

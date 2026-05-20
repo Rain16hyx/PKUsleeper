@@ -97,3 +97,15 @@ class SleepAchievement:
     def fulfilled_by(self, record: SleepRecord) -> bool:
         """Return whether this record satisfies the achievement condition."""
         raise NotImplementedError
+
+
+@dataclass(slots=True)
+class Node:
+    node_id: str
+    name: str
+    description: str
+    demands: dict[str, Any]
+
+    def unlocked_by(self, record: SleepRecord) -> bool:
+        """Return whether this record satisfies the node unlocking condition."""
+        raise NotImplementedError

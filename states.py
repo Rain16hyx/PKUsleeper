@@ -66,3 +66,57 @@ class SleepingState(State):
             tuple(self.session.interruptions),
         )
         return new_SleepRecord
+
+
+class MappingState(State):
+    """
+    该状态表示用户正在查看睡眠地图，负责管理地图数据的加载和展示。
+    """
+
+    def name(self) -> str:
+        return "mapping"
+
+
+class SleepReportState(State):
+    """
+    该状态表示用户正在查看睡眠报告，负责管理报告数据的加载和展示。
+    """
+
+    def name(self) -> str:
+        return "report"
+
+
+class SleepGoalState(State):
+    """
+    该状态表示用户正在管理睡眠目标，负责管理目标的创建、编辑和展示。
+    """
+
+    def name(self) -> str:
+        return "goal_management"
+
+
+class AchievementState(State):
+    """
+    该状态表示用户正在查看成就，负责管理成就数据的加载和展示。
+    """
+
+    def name(self) -> str:
+        return "achievement"
+
+
+class UserProfileState(State):
+    """
+    该状态表示用户正在查看个人档案，负责管理个人信息和历史数据的加载和展示。
+    """
+
+    def name(self) -> str:
+        return "user_profile"
+
+
+class SleepHistoryState(State):
+    """
+    该状态表示用户正在查看睡眠历史与相关数据分析，负责管理历史记录的加载和展示。
+    """
+
+    def name(self) -> str:
+        return "sleep_history"

@@ -5,18 +5,22 @@ from typing import Protocol
 
 
 class SleepReportBuilder(Protocol):
-    def build(self, record: SleepRecord) -> SleepReport:
-        """初始化睡眠报告"""
-        raise NotImplementedError
-
     def calculate_sleep_quality(record: SleepRecord) -> float:
-        """计算单个睡眠记录的质量评分"""
+        """计算睡眠质量评分"""
         raise NotImplementedError
 
-    def evaluate_environment(record: SleepRecord) -> str:
-        """根据单个睡眠记录评估睡眠环境"""
+    def evaluate_environment(record: SleepRecord) -> float:
+        """计算睡眠环境评分"""
+        raise NotImplementedError
+
+    def sleep_score(record: SleepRecord) -> float:
+        """综合睡眠质量和环境评分等，计算最终睡眠得分"""
         raise NotImplementedError
 
     def generate_report(record: SleepRecord) -> str:
-        """从单个睡眠记录生成文本报告"""
+        """打印文本版睡眠报告摘要"""
+        raise NotImplementedError
+
+    def build(self, record: SleepRecord) -> SleepReport:
+        """综合各项分析结果，生成最终睡眠报告"""
         raise NotImplementedError
