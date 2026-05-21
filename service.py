@@ -12,8 +12,9 @@ from models import (
     SleepReport,
     SleepSessionDraft,
     SleepType,
+    Node, 
 )
-from states import SleepingState, State
+from states import SleepingState, State, MappingState
 from utils.data_processing import SleepReportBuilder
 from storage import SleepRecordRepository
 
@@ -137,17 +138,21 @@ class SleepGoalManager:
 
 
 class SleepMapManager:
-    def __init__(self) -> None:
-        self.sleep_maps: dict[str, SleepRecord] = {}
+    def __init__(self, tracker: SleepTracker) -> None:
+        self.tracker = tracker
 
     def evaluate(self):
         """评估用户是否达成了解锁一个节点的全部要求，并返回解锁的节点"""
-        pass
+        if isinstance(self.tracker.current_state, MappingState):
+            return self.tracker.current_state.evaluate_and_update_unlocks(self.tracker.latest_record)
+        return []
 
     def update(self):
         """将新解锁的节点加入用户档案"""
         pass
 
-    def get_unlocked_nodes(self):
+    def get_unlocked_nodes(self) -> list[Node]:
         """返回用户已解锁的节点列表"""
-        pass
+        if isinstance(self.tracker.current_state, MappingState):
+            return self.tracker.current_state.get_unlocked_nodes_list()
+        return []
