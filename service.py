@@ -1,10 +1,13 @@
-"""服务类"""
+"""Application services for PKUSleeper."""
 
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from models import (
+    Node,
+    Roommate,
     SleepAchievement,
     SleepEnvironment,
     SleepGoal,
@@ -12,22 +15,129 @@ from models import (
     SleepReport,
     SleepSessionDraft,
     SleepType,
-    Node, 
-    User, Roommate
+    User,
 )
-from states import SleepingState, State, MappingState, AchievementState
-from utils.data_processing import SleepReportBuilder
+from states import (
+    AchievementState,
+    MappingState,
+    SleepingState,
+    SleepReportState,
+    State,
+)
 from storage import SleepRecordRepository
+from utils.data_processing import SleepReportBuilder
 
 
-class SleepTracker:
+class MainTracker:
     """
-    控制睡眠跟踪的核心服务，管理睡眠状态、记录、报告、成就和目标。
-     1. 负责处理睡眠事件（开始、打断、继续、结束），并维护当前状态。
-     2. 通过 SleepRecordRepository 持久化睡眠记录。
-     3. 通过 SleepReportBuilder 生成睡眠报告。
-     4. 评估和更新成就和目标管理器。
+    Thin facade for UI and command-line entry points.
+
+    It is reasonable to keep this controller as long as it coordinates services
+    instead of implementing every feature itself.
     """
+
+    def __init__(
+        self,
+        user_id: str,
+        record_repository: SleepRecordRepository | None = None,
+        report_builder: SleepReportBuilder | None = None,
+    ) -> None:
+        self.user_id = user_id
+        self.sleep_manager = SleepManager(
+            user_id=user_id,
+            record_repository=record_repository,
+            report_builder=report_builder,
+        )
+        self.achievement_manager = AchievementManager()
+        self.goal_manager = SleepGoalManager()
+        self.map_manager = SleepMapManager()
+        self.user_manager = UserManager(user_id)
+        self.current_view_state: State | None = None
+
+    @property
+    def current_state(self) -> SleepingState | None:
+        """Backward-compatible access to the active sleep state."""
+        return self.sleep_manager.current_state
+
+    @property
+    def active_session(self) -> SleepSessionDraft | None:
+        return self.sleep_manager.active_session
+
+    @property
+    def latest_record(self) -> SleepRecord | None:
+        return self.sleep_manager.latest_record
+
+    @property
+    def latest_report(self) -> SleepReport | None:
+        return self.sleep_manager.latest_report
+
+    @property
+    def all_records(self) -> list[SleepRecord]:
+        return self.sleep_manager.all_records
+
+    def shift_state(self, new_state: State | None) -> None:
+        """Switch UI/view state without changing the active sleep session."""
+        self.current_view_state = new_state
+
+    def start_sleeping(
+        self,
+        started_at: datetime,
+        expected_duration_minutes: int | None,
+        sleep_type: SleepType,
+        environment: SleepEnvironment,
+    ) -> SleepingState:
+        return self.sleep_manager.start_sleeping(
+            started_at=started_at,
+            expected_duration_minutes=expected_duration_minutes,
+            sleep_type=sleep_type,
+            environment=environment,
+        )
+
+    def interrupt_sleep(
+        self,
+        interrupted_at: datetime,
+        reason: str | None = None,
+    ) -> None:
+        self.sleep_manager.interrupt_sleep(interrupted_at, reason)
+
+    def continue_sleeping(self, resumed_at: datetime) -> None:
+        self.sleep_manager.continue_sleeping(resumed_at)
+
+    def wake_up(self, ended_at: datetime) -> SleepRecord:
+        record = self.sleep_manager.wake_up(ended_at)
+
+        self.achievement_manager.evaluate_new_achievements(record)
+
+        completed_goals = self.goal_manager.evaluate(record)
+        self.goal_manager.update(completed_goals)
+
+        newly_unlocked_nodes = self.map_manager.evaluate(record)
+        self.map_manager.update(newly_unlocked_nodes)
+
+        return record
+
+    def generate_sleep_report(self, record: SleepRecord) -> SleepReport:
+        return self.sleep_manager.generate_sleep_report(record)
+
+    def is_sleeping(self) -> bool:
+        return self.sleep_manager.is_sleeping()
+
+    def get_ui_snapshot(self) -> dict[str, Any]:
+        """Return simple state data that a future UI can render directly."""
+        return {
+            "user_id": self.user_id,
+            "is_sleeping": self.is_sleeping(),
+            "active_session": self.active_session,
+            "latest_record": self.latest_record,
+            "latest_report": self.latest_report,
+            "current_view": self.current_view_state.name()
+            if self.current_view_state
+            else None,
+        }
+
+
+class SleepManager:
+    """Service responsible for the sleep-session workflow."""
 
     def __init__(
         self,
@@ -38,17 +148,9 @@ class SleepTracker:
         self.user_id = user_id
         self.record_repository = record_repository
         self.report_builder = report_builder
-
-        self.achievement_state = AchievementState(self)
-        self.achievement_manager = AchievementManager(self.achievement_state)
-        self.goal_manager = SleepGoalManager()
-        self.map_manager = SleepMapManager()
-        self.user_manager = UserManager(user_id)
-
-        self.all_records: list[SleepRecord] = []
-
-        self.current_state: State | None = None
+        self.current_state: SleepingState | None = None
         self.active_session: SleepSessionDraft | None = None
+        self.all_records: list[SleepRecord] = []
         self.latest_record: SleepRecord | None = None
         self.latest_report: SleepReport | None = None
 
@@ -59,17 +161,17 @@ class SleepTracker:
         sleep_type: SleepType,
         environment: SleepEnvironment,
     ) -> SleepingState:
-        """进入睡眠状态"""
+        if self.current_state is not None:
+            raise RuntimeError("A sleep session is already active.")
+
         self.active_session = SleepSessionDraft(
-            self.user_id,
-            started_at,
-            expected_duration_minutes,
-            sleep_type,
-            environment,
-            [],
-            {}
+            user_id=self.user_id,
+            started_at=started_at,
+            expected_duration_minutes=expected_duration_minutes,
+            sleep_type=sleep_type,
+            environment=environment,
         )
-        self.current_state = SleepingState(self, self.active_session)
+        self.current_state = SleepingState(self.active_session)
         return self.current_state
 
     def interrupt_sleep(
@@ -77,104 +179,188 @@ class SleepTracker:
         interrupted_at: datetime,
         reason: str | None = None,
     ) -> None:
-        """为当前 SleepingState 记录一次中断事件"""
-        if isinstance(self.current_state, SleepingState):
-            self.current_state.record_interruption(interrupted_at, reason)
+        self._require_sleeping_state().record_interruption(interrupted_at, reason)
 
     def continue_sleeping(self, resumed_at: datetime) -> None:
-        """睡眠中断后继续睡眠"""
-        if isinstance(self.current_state, SleepingState):
-            interruption = self.current_state.resume_sleeping(resumed_at)
-            if self.active_session:
-                self.active_session.interruptions.append(interruption)
+        self._require_sleeping_state().resume_sleeping(resumed_at)
 
     def wake_up(self, ended_at: datetime) -> SleepRecord:
-        """结束当前阶段，退出睡眠状态，将该记录归档到历史列表中"""
-        if isinstance(self.current_state, SleepingState):
-            record = self.current_state.finalize_sleep(ended_at)
-            self.latest_record = record
-            self.all_records.append(record)
-            if self.record_repository:
-                self.record_repository.save(record)
-            return record
-        raise RuntimeError("当前不在睡眠状态，无法唤醒")
+        state = self._require_sleeping_state()
+        record = state.finalize_sleep(ended_at)
+
+        self.latest_record = record
+        self.all_records.append(record)
+        self.current_state = None
+        self.active_session = None
+
+        if self.record_repository is not None:
+            self.record_repository.save(record)
+
+        if self.report_builder is not None:
+            self.latest_report = self.report_builder.build(record)
+
+        return record
 
     def generate_sleep_report(self, record: SleepRecord) -> SleepReport:
-        """创建睡眠记录的分析报告"""
-        if self.report_builder:
-            self.latest_report = self.report_builder.build(record)
-            return self.latest_report
-        raise RuntimeError("当前类中没有生成报告的模型，无法生成报告")
+        if self.report_builder is None:
+            raise RuntimeError("No report builder is configured.")
+        self.latest_report = self.report_builder.build(record)
+        return self.latest_report
 
     def is_sleeping(self) -> bool:
-        """返回是否在睡眠状态"""
-        return isinstance(self.current_state, SleepingState)
+        return self.current_state is not None
+
+    def _require_sleeping_state(self) -> SleepingState:
+        if self.current_state is None:
+            raise RuntimeError("No active sleep session.")
+        return self.current_state
 
 
 class AchievementManager:
-    def __init__(self, state: "AchievementState") -> None:
-        self._state = state
+    """Service facade for achievement state."""
+
+    def __init__(self, state: AchievementState | None = None) -> None:
+        self._state = state if state is not None else AchievementState()
+
+    @property
+    def all_achievements(self) -> list[SleepAchievement]:
+        return self._state.all_achievements
+
+    @property
+    def unlocked_achievements(self) -> list[SleepAchievement]:
+        return self._state.unlocked_achievements
 
     def init_all_achievements(self, achievements: list[SleepAchievement]) -> None:
-        """初始化系统中的所有成就配置"""
         self._state.all_achievements = achievements
 
     def init_unlocked_achievements(self, achievements: list[SleepAchievement]) -> None:
-        """初始化该用户已经解锁的成就记录"""
         self._state.unlocked_achievements = achievements
 
     def load_user_achievements(self) -> dict[str, list[SleepAchievement]]:
-        """加载用户已经获得和未曾获得的所有成就展示列表"""
         return self._state.load_user_achievements()
-    
+
     def evaluate_new_achievements(self, record: SleepRecord) -> list[SleepAchievement]:
-        """每次睡眠之后都去评估并且返回本次新解锁的成就"""
         return self._state.evaluate_new_achievements(record)
 
 
 class SleepGoalManager:
+    """Service for user sleep goals."""
+
     def __init__(self) -> None:
         self.sleep_goals: list[SleepGoal] = []
         self.completed_goals: list[SleepGoal] = []
 
     def add_goal(self, goal: SleepGoal) -> None:
-        """添加新的睡眠目标到用户的目标列表"""
         self.sleep_goals.append(goal)
 
     def evaluate(self, record: SleepRecord) -> list[SleepGoal]:
-        """返回某次睡眠完成的目标列表"""
-        completed = []
-        for i in range(len(self.sleep_goals)):
-            goal = self.sleep_goals[i]
+        completed: list[SleepGoal] = []
+        for goal in self.sleep_goals:
+            if goal in self.completed_goals:
+                continue
             if goal.fulfilled_by(record):
                 completed.append(goal)
         return completed
 
     def update(self, completed: list[SleepGoal]) -> None:
-        """将新完成的目标加入用户档案"""
-        self.completed_goals.extend(completed)
+        for goal in completed:
+            if goal not in self.completed_goals:
+                self.completed_goals.append(goal)
 
 
 class SleepMapManager:
+    """Service for sleep map unlock progress."""
+
     def __init__(self) -> None:
         self.all_available_nodes: list[Node] = []
         self.unlocked_nodes: list[Node] = []
 
-    def evaluate(self):
-        """评估用户是否达成了解锁一个节点的全部要求，并返回解锁的节点"""
-        if isinstance(self.tracker.current_state, MappingState):
-            return self.tracker.current_state.evaluate_and_update_unlocks(self.tracker.latest_record)
-        return []
+    def as_state(self) -> MappingState:
+        return MappingState(self.all_available_nodes, self.unlocked_nodes)
+
+    def load_map_nodes(self) -> dict[str, Any]:
+        return self.as_state().load_map_nodes()
+
+    def evaluate(self, record: SleepRecord | None) -> list[Node]:
+        return self.as_state().evaluate_new_unlocks(record)
 
     def update(self, newly_unlocked: list[Node]) -> None:
-        """将新解锁的节点加入用户档案"""
-        self.unlocked_nodes.extend(newly_unlocked)
+        for node in newly_unlocked:
+            if node not in self.unlocked_nodes:
+                self.unlocked_nodes.append(node)
+
+    def view_node_details(self, node_id: str) -> dict[str, Any]:
+        return self.as_state().view_node_details(node_id)
 
 
 class UserManager:
+    """Service for user profile, roommates, and schedule data."""
+
     def __init__(self, user_id: str) -> None:
-        self.current_user = User(user_id, "未登录北大同学")
+        self.current_user = User(user_id=user_id, username="PKU student")
         self.roommate_list: list[Roommate] = []
         self.current_level: int = 1
         self.current_experience: int = 0
         self.schedule_storage: dict[str, Any] = {}
+
+    def update_personal_info(self, new_username: str | None = None) -> User:
+        if new_username:
+            self.current_user.username = new_username
+        return self.current_user
+
+    def add_roommate(self, roommate: Roommate) -> None:
+        if roommate not in self.roommate_list:
+            self.roommate_list.append(roommate)
+
+    def remove_roommate(self, roommate_id: str) -> None:
+        self.roommate_list = [
+            roommate
+            for roommate in self.roommate_list
+            if roommate.roommate_id != roommate_id
+        ]
+
+    def import_schedule(self, schedule_data: dict[str, Any]) -> None:
+        self.schedule_storage = schedule_data
+
+    def add_experience(self, exp_gained: int) -> tuple[int, int]:
+        if exp_gained > 0:
+            self.current_experience += exp_gained
+            while self.current_experience >= 100:
+                self.current_experience -= 100
+                self.current_level += 1
+        return self.current_level, self.current_experience
+
+
+class SleepAdvisor:
+    def generate_sleep_suggestions(
+        self,
+        schedule_data: dict[str, Any],
+        roommates: list[Roommate],
+    ) -> str:
+        if not schedule_data:
+            return "No schedule data is available."
+
+        has_early_class = any(
+            time_text < "08:30" for time_text in schedule_data.values()
+        )
+        has_roommates = len(roommates) > 0
+
+        if has_early_class and has_roommates:
+            return "Sleep before 23:00 and consider using earplugs."
+        if has_early_class:
+            return "Sleep before 23:30 for tomorrow's early class."
+        return "Keep a stable sleep rhythm."
+
+
+class SleepReportManager:
+    def __init__(self, report_builder: SleepReportBuilder | None = None) -> None:
+        self._state = SleepReportState(report_builder)
+
+    def generate_daily_report(self, record: SleepRecord) -> SleepReport:
+        return self._state.generate_daily_report(record)
+
+    def export_report_for_sharing(self, report: SleepReport) -> str:
+        return self._state.export_report_for_sharing(report)
+
+
+SleepTracker = MainTracker

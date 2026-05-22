@@ -86,6 +86,10 @@ class SleepGoal:
     target_value: float
     difficulty_level: int
 
+    def fulfilled_by(self, record: SleepRecord) -> bool:
+        """Return whether this record satisfies the goal condition."""
+        raise NotImplementedError
+
 
 @dataclass(slots=True)
 class SleepAchievement:
