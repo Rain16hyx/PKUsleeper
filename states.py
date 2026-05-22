@@ -88,19 +88,18 @@ class MappingState(State):
     """
     def __init__(self, tracker: SleepTracker) -> None:
         super().__init__(tracker)
-        self.unlocked_nodes: list[Node] = []
-        self.all_available_nodes: list[Node] = []
 
     def name(self) -> str:
         return "mapping"
     
     def load_map_nodes(self) -> dict[str, Any]:
         """加载当前睡眠地图的所有节点信息"""
-        unlocked_ids = {node.node_id for node in self.unlocked_nodes}
-        locked_nodes = [node for node in self.all_available_nodes if node.node_id not in unlocked_ids]
-
-        total_count = len(self.all_available_nodes)
-        unlocked_count = len(self.unlocked_nodes)
+        unlocked = self.tracker.map_manager.unlocked_nodes
+        all_nodes = self.tracker.map_manager.all_available_nodes
+        unlocked_ids = {node.node_id for node in unlocked}
+        locked_nodes = [node for node in all_nodes if node.node_id not in unlocked_ids]
+        total_count = len(all_nodes)
+        unlocked_count = len(unlocked)
         completion_rate = (
             unlocked_count / total_count if total_count > 0 else 0.0
         )
@@ -108,7 +107,7 @@ class MappingState(State):
         return {
             "total_count": total_count, 
             "unlocked_count": unlocked_count, 
-            "unlocked_nodes": self.unlocked_nodes, 
+            "unlocked_nodes": unlocked, 
             "locked_nodes": locked_nodes, 
             "completion_rate": completion_rate
         }
@@ -119,27 +118,27 @@ class MappingState(State):
             return []
         
         newly_unlocked: list[Node] = []
-        unlocked_ids = {node.node_id for node in self.unlocked_nodes}
-
-        for node in self.all_available_nodes:
+        unlocked = self.tracker.map_manager.unlocked_nodes
+        unlocked_ids = {node.node_id for node in unlocked}
+        for node in self.tracker.map_manager.all_available_nodes:
             if node.node_id not in unlocked_ids:
                 if node.unlocked_by(latest_record):
                     newly_unlocked.append(node)
-                    self.unlocked_nodes.append(node)
         
+        self.tracker.map_manager.update(newly_unlocked)
         return newly_unlocked
 
     def view_node_details(self, node_id: str) -> dict[str, Any]:
         """查看特定地图节点的详细介绍和解锁条件"""
         target_node = next(
-            (node for node in self.all_available_nodes if node.node_id == node_id), 
+            (node for node in self.tracker.map_manager.all_available_nodes if node.node_id == node_id), 
             None, 
         )
 
         if not target_node:
             raise ValueError(f"无法找到 ID 为 {node_id} 的地图节点配置")
         
-        is_unlocked = any(node.node_id == node_id for node in self.unlocked_nodes)
+        is_unlocked = any(node.node_id == node_id for node in self.tracker.map_manager.unlocked_nodes)
 
         return {
             "node": target_node, 
@@ -212,23 +211,42 @@ class SleepGoalState(State):
     """
     def __init__(self, tracker: SleepTracker) -> None:
         super().__init__(tracker)
-        self.goals_list: list[SleepGoal] = []
-        self.schedule_storage: dict[str, Any] = {}  # 存储导入的原始课表或日程数据
 
     def name(self) -> str:
         return "goal_management"
     
     def set_manual_goal(self, goal_type: str, target_value: float, difficulty_level: int) -> SleepGoal:
         """设置目标的入睡时间、起床时间和睡眠时长"""
-        pass
+        import uuid
+
+        new_goal = SleepGoal(
+            goal_id=str(uuid.uuid4())[:8], 
+            goal_type=goal_type, 
+            target_value=target_value, 
+            difficulty_level=difficulty_level
+        )
+
+        self.tracker.goal_manager.add_goal(new_goal)
+        return new_goal
 
     def import_schedule(self, schedule_data: dict[str, Any]) -> None:
         """导入课表形式，获取软件根据课表信息安排的睡眠建议"""
-        pass
+        self.tracker.user_manager.schedule_storage = schedule_data
 
     def generate_sleep_suggestions(self, roommates: list[Roommate]) -> str:
         """根据导入的课表以及舍友的作息信息，生成建议"""
-        pass
+        schedule = self.tracker.user_manager.schedule_storage
+        if not schedule:
+            return "暂无课表数据，建议保持每天 8 小时以上的睡眠时间。"
+        
+        has_early_class = any(time_str < "08:30" for time_str in schedule.values())
+        has_roommates = len(roommates) > 0
+
+        if has_early_class and has_roommates:
+            return "明早有早八，且宿舍有舍友。建议今晚 23:00 前入睡，可佩戴耳塞。"
+        elif has_early_class:
+            return "明早有早八，建议今晚 23:30 前入睡。"
+        return "作息较为宽松，建议维持正常的入睡节律"
 
     def check_reminders(self, current_time: datetime) -> list[str]:
         """
@@ -279,47 +297,64 @@ class UserProfileState(State):
     """
     def __init__(self, tracker: SleepTracker) -> None:
         super().__init__(tracker)
-        self.current_user = User(user_id=self.tracker.user_id, username="未登录北大同学")
-        self.roommates_list: list[Roommate] = []
-        self.current_level: int = 1
-        self.current_experience: int = 0
 
     def name(self) -> str:
         return "user_profile"
     
     def load_personal_info(self) -> User:
         """加载用户名与ID"""
-        return self.current_user
+        return self.tracker.user_manager.current_user
 
     def update_personal_info(self, new_username: str | None = None) -> User:
         """更新用户个人信息"""
         if new_username:
-            self.current_user.username = new_username
-        return self.current_user
+            self.tracker.user_manager.current_user.username = new_username
+        return self.tracker.user_manager.current_user
 
     def add_experience(self, exp_gained: int) -> tuple[int, int]:
         """增加经验值，每 100 经验升一级，返回最新的(当前等级, 当前经验值)"""
-        if exp_gained <= 0:
-            return self.current_level, self.current_experience
-        
-        self.current_experience += exp_gained
-        while self.current_experience >= 100:
-            self.current_experience -= 100
-            self.current_level += 1
-
-        return self.current_level, self.current_experience
+        um = self.tracker.user_manager
+        if exp_gained > 0:
+            um.current_experience += exp_gained
+            while um.current_experience >= 100:
+                um.current_experience -= 100
+                um.current_level += 1
+        return um.current_level, um.current_experience
     
     def manage_roommates(self, action: str, roommate: Roommate | None = None) -> list[Roommate]:
         """
         action: "add", "remove". "list"
         """
-        pass
+        um = self.tracker.user_manager
+        if action == "add" and roommate and roommate not in um.roommate_list:
+            um.roommate_list.append(roommate)
+        elif action == "remove" and roommate:
+            um.roommate_list = [r for r in um.roommate_list if r.roommate_id != roommate.roommate_id]
+        return um.roommate_list
 
-    def load_history_summary(self, all_records: list[SleepRecord]) -> dict[str, Any]:
+    def load_history_summary(self) -> dict[str, Any]:
         """
         加载历史数据的摘要，用于在个人档案主页展示。
         """
-        pass
+        all_record = self.tracker.all_records
+        total_days = len(all_record)
+
+        if total_days == 0:
+            return {
+                "total_days": 0, 
+                "global_avg_hours": 0.0, 
+                "level": self.tracker.user_manager.current_level
+            }
+        
+        total_minutes = sum(int((r.ended_at - r.started_at).total_seconds() // 60) for r in all_record)
+        avg_hours = (total_minutes / total_days) / 60
+
+        return {
+            "total_days": total_days, 
+            "global_avg_hours": round(avg_hours, 1), 
+            "level":self.tracker.user_manager.current_level, 
+            "experience": self.tracker.user_manager.current_experience
+        }
 
 
 class SleepHistoryState(State):
@@ -328,7 +363,6 @@ class SleepHistoryState(State):
     """
     def __init__(self, tracker: SleepTracker) -> None:
         super().__init__(tracker)
-        self.history_records: list[SleepRecord] = []
 
     def name(self) -> str:
         return "sleep_history"
