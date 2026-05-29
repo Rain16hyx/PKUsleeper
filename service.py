@@ -130,9 +130,9 @@ class MainTracker:
             "active_session": self.active_session,
             "latest_record": self.latest_record,
             "latest_report": self.latest_report,
-            "current_view": self.current_view_state.name()
-            if self.current_view_state
-            else None,
+            "current_view": (
+                self.current_view_state.name() if self.current_view_state else None
+            ),
         }
 
 
@@ -195,9 +195,6 @@ class SleepManager:
 
         if self.record_repository is not None:
             self.record_repository.save(record)
-
-        if self.report_builder is not None:
-            self.latest_report = self.report_builder.build(record)
 
         return record
 
@@ -361,6 +358,3 @@ class SleepReportManager:
 
     def export_report_for_sharing(self, report: SleepReport) -> str:
         return self._state.export_report_for_sharing(report)
-
-
-SleepTracker = MainTracker
