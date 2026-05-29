@@ -65,6 +65,7 @@ class SleepRecord:
     started_at: datetime
     ended_at: datetime
     expected_duration_minutes: int | None
+    expected_start_time: datetime 
     sleep_type: SleepType
     environment: SleepEnvironment
     interruptions: tuple[SleepInterruption, ...] = ()
@@ -84,13 +85,14 @@ class SleepGoal:
     goal_id: str
     goal_type: str
     target_value: float
+    expected_sleep_start_time:datetime
     difficulty_level: int
 
     def fulfilled_by(self, record: SleepRecord) -> bool:
         """Return whether this record satisfies the goal condition."""
         raise NotImplementedError
 
-
+#这个可能要改成自动判断某些历史性成就是否达成，每存入一次睡眠记录时都要检查
 @dataclass(slots=True)
 class SleepAchievement:
     achievement_id: str
