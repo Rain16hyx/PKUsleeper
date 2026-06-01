@@ -85,6 +85,8 @@ class SleepGoal:
     goal_id: str
     goal_type: str
     target_value: float
+    target_duration_minutes:int
+    #注意此处添加了一个目标睡眠时长
     expected_sleep_start_time:datetime
     difficulty_level: int
 

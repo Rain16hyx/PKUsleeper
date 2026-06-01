@@ -8,13 +8,14 @@ fallback data where lower-level features are still being implemented.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime,time
 from typing import Any
 from uuid import uuid4
 
 from models import SleepEnvironment, SleepRecord, SleepType
 from service import MainTracker
-
+from storage import SleepRecordRepository
+from utils.data_processing import StatisticDataAnalyzer,SleepReportBuilder
 
 @dataclass(slots=True)
 class ActionResult:
@@ -40,13 +41,24 @@ class ServiceBridge:
             "record_count": len(self.get_recent_records(9999)),
         }
 
-    def start_sleep(self) -> ActionResult:
+    def start_sleep(self,
+                    sleep_type:SleepType,
+                    environment:SleepEnvironment,
+                        ) -> ActionResult:
         try:
+            if sleep_type==SleepType.NAP:
+                expected_minutes=30
+            else:
+                goal = self.tracker.goal_manager.sleep_goal
+                if goal and hasattr(goal, "target_duration_minutes"):
+                    expected_minutes = goal.target_duration_minutes
+                else:
+                    expected_minutes = 480 
             self.tracker.start_sleeping(
                 started_at=datetime.now(),
-                expected_duration_minutes=450,
-                sleep_type=SleepType.NIGHT,
-                environment=SleepEnvironment.DORMITORY,
+                expected_duration_minutes=expected_minutes,
+                sleep_type=sleep_type,
+                environment=environment,
             )
         except Exception as exc:  # noqa: BLE001 - keeps unfinished service safe for UI.
             return ActionResult(False, f"开始睡眠失败：{exc}")
@@ -62,9 +74,11 @@ class ServiceBridge:
             return ActionResult(True, "底层记录接口尚未完成，已生成一条临时 UI 记录。", fallback)
         return ActionResult(True, "本次睡眠已记录", record)
 
-    def get_recent_records(self, days: int = 7) -> list[SleepRecord]:
+    def get_recent_records(self, days: int = 7,sleep_type:SleepType|None=None) -> list[SleepRecord]:
         records = list(getattr(self.tracker, "all_records", []) or [])
         records.extend(self._fallback_records)
+        if sleep_type is not None:
+            records = [r for r in records if r.sleep_type == sleep_type]
         records.sort(key=lambda record: record.started_at, reverse=True)
         return records[:days]
 
@@ -76,7 +90,7 @@ class ServiceBridge:
         }
 
     def get_report_dashboard(self, days: int = 7) -> dict[str, Any]:
-        records = self.get_recent_records(days)
+        records = self.get_recent_records(days,sleep_type=SleepType.NIGHT)
         if not records:
             return {
                 "avg_sleep_hours": 0.0,
@@ -85,9 +99,15 @@ class ServiceBridge:
                 "goal_completion_rate": 0,
                 "score": 0,
             }
+        goal = self.tracker.goal_manager.sleep_goal
+        threshold_hours = (goal.target_duration_minutes / 60.0) if goal else 8.0
 
         durations = [self._duration_hours(record) for record in records]
-        completed = sum(1 for value in durations if value >= 7.0)
+        completed_days = sum(1 for value in durations if value >= threshold_hours)
+
+        grader=SleepReportBuilder()
+        avg_score = round(sum(grader.calculate_sleep_quality(r) for r in records) / len(records))
+        
         return {
             "avg_sleep_hours": round(sum(durations) / len(durations), 1),
             "avg_sleep_time": self._average_time_text(
@@ -96,30 +116,45 @@ class ServiceBridge:
             "avg_wake_time": self._average_time_text(
                 [record.ended_at for record in records]
             ),
-            "goal_completion_rate": round(completed / len(records) * 100),
-            "score": min(100, round(60 + sum(durations) / len(durations) * 3)),
+            "goal_completion_rate": round(completed_days / len(records) * 100),
+            "score": min(100, avg_score),
         }
 
-    def get_goal_dashboard(self) -> dict[str, Any]:
-        records = self.get_recent_records(7)
-        done = sum(1 for record in records if self._duration_hours(record) >= 7.0)
+    def get_goal_dashboard(self,days) -> dict[str, Any]:
+        goal = self.tracker.goal_manager.sleep_goal
+        if goal.target_duration_minutes: 
+            expected_duration=goal.target_duration_minutes 
+        else:
+            expected_duration=8.0
+        records = self.get_recent_records(days)
+        done = sum(1 for record in records if self._duration_hours(record) >= expected_duration)
         return {
-            "target_hours": 7.5,
+            "target_hours": expected_duration,
             "done_days": done,
-            "total_days": 7,
-            "rate": round(done / 7 * 100),
+            "total_days": days,
+            "rate": round(done / days* 100),
         }
 
     def get_achievement_dashboard(self) -> dict[str, Any]:
-        records = self.get_recent_records(9999)
+        goal=self.tracker.goal_manager.sleep_goal
+        if goal and getattr(goal, "expected_sleep_start_time", None):
+            expected_start_time = goal.expected_sleep_start_time.time()
+        else:
+            expected_start_time = time(23, 30)
+
+        if goal and getattr(goal, "target_duration_minutes", None):
+            expected_duration = goal.target_duration_minutes / 60.0
+        else:
+            expected_duration = 8.0
+        records = self.get_recent_records(9999,sleep_type=SleepType.NIGHT)
         unlocked = 0
         if records:
             unlocked += 1
-        if any(record.started_at.strftime("%H:%M") <= "23:30" for record in records):
+        if any(record.started_at.time() <= expected_start_time for record in records):
             unlocked += 1
         if len(records) >= 3:
             unlocked += 1
-        if sum(1 for record in records if self._duration_hours(record) >= 7.0) >= 5:
+        if sum(1 for record in records if self._duration_hours(record) >= expected_duration) >= 5:
             unlocked += 1
         return {
             "unlocked_count": unlocked,

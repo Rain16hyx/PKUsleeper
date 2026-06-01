@@ -244,9 +244,8 @@ class SleepGoalManager:
     """Service for user sleep goals."""
 
     def __init__(self) -> None:
-        self.sleep_goals: list[SleepGoal] = []
-        self.completed_goals: list[SleepGoal] = []
-
+        self.sleep_goal: SleepGoal
+    '''
     def add_goal(self, goal: SleepGoal) -> None:
         self.sleep_goals.append(goal)
 
@@ -262,7 +261,7 @@ class SleepGoalManager:
     def update(self, completed: list[SleepGoal]) -> None:
         for goal in completed:
             if goal not in self.completed_goals:
-                self.completed_goals.append(goal)
+                self.completed_goals.append(goal)'''
 
 
 class SleepMapManager:
