@@ -170,17 +170,9 @@ QLabel {
         stop:0 #eda235, stop:1 #f3bb57);
 }
 
-#achievementRow,
-#achievementRow_2,
-#achievementRow_3,
-#achievementRow_4,
-#lockedRow,
-#lockedRow_2,
-#lockedRow_3 {
-    background: #fffefa;
-    border: 1px solid #ead9c5;
-    border-radius: 8px;
-}
+unlockedAchievementsLayout
+
+lockedAchievementsLayout
 
 #rowIcon,
 #rowIcon_2,
@@ -461,97 +453,149 @@ QLabel {
         <property name="bottomMargin"><number>16</number></property>
         <item><widget class="QLabel" name="cardTitle"><property name="text"><string>已解锁成就</string></property></widget></item>
         <item>
-         <widget class="QFrame" name="achievementRow">
-          <layout class="QGridLayout" name="achievementRowLayout">
-           <item row="0" column="0"><widget class="QLabel" name="rowIcon"><property name="text"><string>☾</string></property></widget></item>
-           <item row="0" column="1"><widget class="QLabel" name="rowName"><property name="text"><string>早睡达人</string></property></widget></item>
-           <item row="0" column="2"><widget class="QLabel" name="rowDesc"><property name="text"><string>连续早睡 3 天</string></property></widget></item>
-           <item row="0" column="3"><widget class="QLabel" name="rowStatus"><property name="text"><string>已解锁</string></property></widget></item>
-          </layout>
+         <widget class="QScrollArea" name="unlockedScrollArea">
+          <property name="widgetResizeable">
+           <bool>true</bool>
+          </property>
+          
+          <property name="frameShape">
+           <enum>QFrame::Shape::NoFrame</enum>
+          </property>
+          <widget class="QWidget" name="unlockedContainer">
+           <property name="autoFillBackground">
+            <bool>true</bool>
+           </property>
+
+           <property name="styleSheet">
+            <string>#unlockedContainer { background-color: #fffefd; }</string>
+           </property>
+
+           <layout class="QVBoxLayout" name="unlockedAchievementsLayout">
+            <property name="spacing">
+             <number>8</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+           </layout>
+
+          </widget>
          </widget>
         </item>
         <item>
-         <widget class="QFrame" name="achievementRow_2">
-          <layout class="QGridLayout" name="achievementRowLayout_2">
-           <item row="0" column="0"><widget class="QLabel" name="rowIcon_2"><property name="text"><string>⑦</string></property></widget></item>
-           <item row="0" column="1"><widget class="QLabel" name="rowName_2"><property name="text"><string>一周达成</string></property></widget></item>
-           <item row="0" column="2"><widget class="QLabel" name="rowDesc_2"><property name="text"><string>7 天内完成睡眠目标 5 天</string></property></widget></item>
-           <item row="0" column="3"><widget class="QLabel" name="rowStatus_2"><property name="text"><string>已解锁</string></property></widget></item>
-          </layout>
+         <widget class="QPushButton" name="viewAllButton">
+          <property name="text">
+           <string>查看全部 ›</string>
+          </property>
          </widget>
         </item>
-        <item>
-         <widget class="QFrame" name="achievementRow_3">
-          <layout class="QGridLayout" name="achievementRowLayout_3">
-           <item row="0" column="0"><widget class="QLabel" name="rowIcon_3"><property name="text"><string>▣</string></property></widget></item>
-           <item row="0" column="1"><widget class="QLabel" name="rowName_3"><property name="text"><string>规律作息</string></property></widget></item>
-           <item row="0" column="2"><widget class="QLabel" name="rowDesc_3"><property name="text"><string>连续 5 天作息稳定</string></property></widget></item>
-           <item row="0" column="3"><widget class="QLabel" name="rowStatus_3"><property name="text"><string>已解锁</string></property></widget></item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QFrame" name="achievementRow_4">
-          <layout class="QGridLayout" name="achievementRowLayout_4">
-           <item row="0" column="0"><widget class="QLabel" name="rowIcon_4"><property name="text"><string>☕</string></property></widget></item>
-           <item row="0" column="1"><widget class="QLabel" name="rowName_4"><property name="text"><string>午休习惯</string></property></widget></item>
-           <item row="0" column="2"><widget class="QLabel" name="rowDesc_4"><property name="text"><string>完成午休记录 3 次</string></property></widget></item>
-           <item row="0" column="3"><widget class="QLabel" name="rowStatus_4"><property name="text"><string>已解锁</string></property></widget></item>
-          </layout>
-         </widget>
-        </item>
-        <item><spacer name="unlockedSpacer"><property name="orientation"><enum>Qt::Orientation::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>16</height></size></property></spacer></item>
-        <item><widget class="QPushButton" name="viewAllButton"><property name="text"><string>查看全部  ›</string></property></widget></item>
        </layout>
       </widget>
      </item>
      <item>
       <widget class="QFrame" name="lockedFrame">
-       <property name="frameShape"><enum>QFrame::Shape::NoFrame</enum></property>
+
+       <property name="frameShape">
+        <enum>QFrame::Shape::NoFrame</enum>
+       </property>
+
        <layout class="QVBoxLayout" name="lockedLayout">
-        <property name="spacing"><number>10</number></property>
-        <property name="leftMargin"><number>20</number></property>
-        <property name="topMargin"><number>20</number></property>
-        <property name="rightMargin"><number>20</number></property>
-        <property name="bottomMargin"><number>16</number></property>
-        <item><widget class="QLabel" name="cardTitle_2"><property name="text"><string>待解锁成就</string></property></widget></item>
+
+        <property name="spacing">
+         <number>10</number>
+        </property>
+
+        <property name="leftMargin">
+         <number>20</number>
+        </property>
+
+        <property name="topMargin">
+         <number>20</number>
+        </property>
+
+        <property name="rightMargin">
+         <number>20</number>
+        </property>
+
+        <property name="bottomMargin">
+         <number>16</number>
+        </property>
+
         <item>
-         <widget class="QFrame" name="lockedRow">
-          <layout class="QGridLayout" name="lockedRowLayout">
-           <item row="0" column="0"><widget class="QLabel" name="lockedIcon"><property name="text"><string>☾</string></property></widget></item>
-           <item row="0" column="1"><widget class="QLabel" name="rowName_5"><property name="text"><string>深度睡眠</string></property></widget></item>
-           <item row="0" column="2"><widget class="QLabel" name="rowDesc_5"><property name="text"><string>单日深睡时长达到 2 小时</string></property></widget></item>
-           <item row="0" column="3"><widget class="QLabel" name="lockedProgress"><property name="text"><string>1 / 2</string></property></widget></item>
-           <item row="0" column="4"><widget class="QLabel" name="lockedStatus"><property name="text"><string>待解锁</string></property></widget></item>
-          </layout>
+         <widget class="QLabel" name="cardTitle_2">
+          <property name="text">
+           <string>待解锁成就</string>
+          </property>
          </widget>
         </item>
+
         <item>
-         <widget class="QFrame" name="lockedRow_2">
-          <layout class="QGridLayout" name="lockedRowLayout_2">
-           <item row="0" column="0"><widget class="QLabel" name="lockedIcon_2"><property name="text"><string>⌖</string></property></widget></item>
-           <item row="0" column="1"><widget class="QLabel" name="rowName_6"><property name="text"><string>地图探索者</string></property></widget></item>
-           <item row="0" column="2"><widget class="QLabel" name="rowDesc_6"><property name="text"><string>解锁 4 个打卡地点</string></property></widget></item>
-           <item row="0" column="3"><widget class="QLabel" name="lockedProgress_2"><property name="text"><string>2 / 4</string></property></widget></item>
-           <item row="0" column="4"><widget class="QLabel" name="lockedStatus_2"><property name="text"><string>待解锁</string></property></widget></item>
-          </layout>
+         <widget class="QScrollArea" name="lockedScrollArea">
+
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+
+          <property name="frameShape">
+           <enum>QFrame::Shape::NoFrame</enum>
+          </property>
+
+          <widget class="QWidget" name="lockedContainer">
+           <property name="autoFillBackground">
+            <bool>true</bool>
+           </property>
+           <property name="styleSheet">
+            <string>#lockedContainer { background-color: #fffefd; }</string>
+           </property>
+           <layout class="QVBoxLayout" name="lockedAchievementsLayout">
+            <property name="spacing">
+             <number>8</number>
+            </property>
+
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+
+           </layout>
+
+          </widget>
+
          </widget>
         </item>
+
         <item>
-         <widget class="QFrame" name="lockedRow_3">
-          <layout class="QGridLayout" name="lockedRowLayout_3">
-           <item row="0" column="0"><widget class="QLabel" name="lockedIcon_3"><property name="text"><string>▯</string></property></widget></item>
-           <item row="0" column="1"><widget class="QLabel" name="rowName_7"><property name="text"><string>博雅夜行者</string></property></widget></item>
-           <item row="0" column="2"><widget class="QLabel" name="rowDesc_7"><property name="text"><string>夜间在图书馆完成学习打卡 3 次</string></property></widget></item>
-           <item row="0" column="3"><widget class="QLabel" name="lockedProgress_3"><property name="text"><string>1 / 3</string></property></widget></item>
-           <item row="0" column="4"><widget class="QLabel" name="lockedStatus_3"><property name="text"><string>待解锁</string></property></widget></item>
-          </layout>
+         <widget class="QPushButton" name="viewAllButton_2">
+          <property name="text">
+           <string>查看全部 ›</string>
+          </property>
          </widget>
         </item>
-        <item><spacer name="lockedSpacer"><property name="orientation"><enum>Qt::Orientation::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>40</height></size></property></spacer></item>
-        <item><widget class="QPushButton" name="viewAllButton_2"><property name="text"><string>查看全部  ›</string></property></widget></item>
+
        </layout>
+
       </widget>
+      
      </item>
     </layout>
    </item>

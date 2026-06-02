@@ -104,7 +104,25 @@ class SleepAchievement:
 
     def fulfilled_by(self, record: SleepRecord) -> bool:
         """Return whether this record satisfies the achievement condition."""
-        raise NotImplementedError
+        # 睡眠类型
+        sleep_type_demand = self.demands.get("sleep_type")
+        if sleep_type_demand and record.sleep_type != sleep_type_demand:
+            return False
+        
+        # 最小入睡时长
+        min_hours = self.demands.get("min_duration_hours")
+        if min_hours is not None:
+            duration_hours = (record.ended_at - record.started_at).total_seconds() / 3600
+            if duration_hours < min_hours:
+                return False
+        
+        # 最晚入睡时间
+        max_start = self.demands.get("max_start_time")
+        if max_start is not None:
+            if record.started_at.time() > max_start:
+                return False
+        
+        return True
 
 
 @dataclass(slots=True)

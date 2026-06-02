@@ -6,6 +6,9 @@ from datetime import datetime,timedelta
 from typing import Callable
 
 from PySide6.QtWidgets import QProgressBar
+from PySide6.QtWidgets import (
+    QLabel, QFrame, QHBoxLayout, QVBoxLayout
+)
 
 from models import SleepRecord,SleepType
 from ui_controllers.base import UiController
@@ -347,14 +350,116 @@ class GoalController(UiController):
 
 
 class AchievementController(UiController):
+
     def refresh(self) -> None:
         data = self.bridge.get_achievement_dashboard()
-        self.set_label_text("statValue", str(data["unlocked_count"]))
-        self.set_label_text("statValue_2", str(data["streak_days"]))
-        self.set_label_text("statValue_3", str(data["points"]))
-        self.set_label_text("nextCount", str(max(0, 5 - data["unlocked_count"])))
+        self.set_label_text(
+            "statValue",
+            str(data["unlocked_count"])
+        )
+        self.set_label_text(
+            "statValue_2",
+            str(data["streak_days"])
+        )
+        self.set_label_text(
+            "statValue_3",
+            str(data["points"])
+        )
+        self.set_label_text(
+            "nextCount",
+            str(max(0, 5 - data["unlocked_count"]))
+        )
+        achievement_data = (
+            self.bridge.tracker
+            .achievement_manager
+            .load_user_achievements()
+        )
+        unlocked = achievement_data["unlocked"]
+        locked = achievement_data["locked"]
+        unlocked_layout = self.page.findChild(
+            QVBoxLayout,
+            "unlockedAchievementsLayout"
+        )
+        locked_layout = self.page.findChild(
+            QVBoxLayout,
+            "lockedAchievementsLayout"
+        )
+        if unlocked_layout is None:
+            return
+        if locked_layout is None:
+            return
+        while unlocked_layout.count():
+            item = unlocked_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
 
+        while locked_layout.count():
+            item = locked_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        for achievement in unlocked:
+            unlocked_layout.addWidget(
+                self._create_achievement_row(
+                    achievement,
+                    True
+                )
+            )
+        for achievement in locked:
+            locked_layout.addWidget(
+                self._create_achievement_row(
+                    achievement,
+                    False
+                )
+            )
+        unlocked_layout.addStretch()
+        locked_layout.addStretch()
 
+    def _create_achievement_row(
+        self,
+        achievement,
+        unlocked=True
+    ):
+
+        row = QFrame()
+
+        row.setObjectName(
+            "achievementRow"
+            if unlocked
+            else "lockedRow"
+        )
+
+        layout = QHBoxLayout(row)
+
+        layout.setContentsMargins(
+            12,
+            8,
+            12,
+            8
+        )
+
+        name = QLabel(achievement.name)
+
+        desc = QLabel(achievement.description)
+
+        status = QLabel(
+            "已解锁"
+            if unlocked
+            else "待解锁"
+        )
+
+        name.setMinimumWidth(120)
+
+        desc.setWordWrap(True)
+
+        layout.addWidget(name)
+
+        layout.addWidget(desc)
+
+        layout.addStretch()
+
+        layout.addWidget(status)
+
+        return row
 class StaticPageController(UiController):
     """Controller for pages that are intentionally display-only for now."""
 

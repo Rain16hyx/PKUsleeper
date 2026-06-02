@@ -101,6 +101,8 @@ class MainWindowController:
                 )
             elif controller_cls is RecordsController:
                 controller = controller_cls(page, self.bridge, self.switch_page)
+            elif controller_cls is AnalysisController:
+                controller = controller_cls(page, self.bridge, self.switch_page)
             else:
                 controller = controller_cls(page, self.bridge)
             controller.bind_events()

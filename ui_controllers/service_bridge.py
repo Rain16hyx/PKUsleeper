@@ -12,7 +12,7 @@ from datetime import datetime,time
 from typing import Any
 from uuid import uuid4
 
-from models import SleepEnvironment, SleepRecord, SleepType
+from models import SleepEnvironment, SleepRecord, SleepType, SleepAchievement
 from service import MainTracker
 from storage import SleepRecordRepository
 from utils.data_processing import StatisticDataAnalyzer,SleepReportBuilder
@@ -120,7 +120,7 @@ class ServiceBridge:
             "score": min(100, avg_score),
         }
 
-    def get_goal_dashboard(self,days) -> dict[str, Any]:
+    def get_goal_dashboard(self,days=7) -> dict[str, Any]:
         goal = self.tracker.goal_manager.sleep_goal
         if goal.target_duration_minutes: 
             expected_duration=goal.target_duration_minutes 
@@ -136,30 +136,40 @@ class ServiceBridge:
         }
 
     def get_achievement_dashboard(self) -> dict[str, Any]:
-        goal=self.tracker.goal_manager.sleep_goal
-        if goal and getattr(goal, "expected_sleep_start_time", None):
-            expected_start_time = goal.expected_sleep_start_time.time()
-        else:
-            expected_start_time = time(23, 30)
+        # goal=self.tracker.goal_manager.sleep_goal
+        # if goal and getattr(goal, "expected_sleep_start_time", None):
+        #     expected_start_time = goal.expected_sleep_start_time.time()
+        # else:
+        #     expected_start_time = time(23, 30)
 
-        if goal and getattr(goal, "target_duration_minutes", None):
-            expected_duration = goal.target_duration_minutes / 60.0
-        else:
-            expected_duration = 8.0
-        records = self.get_recent_records(9999,sleep_type=SleepType.NIGHT)
-        unlocked = 0
-        if records:
-            unlocked += 1
-        if any(record.started_at.time() <= expected_start_time for record in records):
-            unlocked += 1
-        if len(records) >= 3:
-            unlocked += 1
-        if sum(1 for record in records if self._duration_hours(record) >= expected_duration) >= 5:
-            unlocked += 1
+        # if goal and getattr(goal, "target_duration_minutes", None):
+        #     expected_duration = goal.target_duration_minutes / 60.0
+        # else:
+        #     expected_duration = 8.0
+        # records = self.get_recent_records(9999,sleep_type=SleepType.NIGHT)
+        # unlocked = 0
+        # if records:
+        #     unlocked += 1
+        # if any(record.started_at.time() <= expected_start_time for record in records):
+        #     unlocked += 1
+        # if len(records) >= 3:
+        #     unlocked += 1
+        # if sum(1 for record in records if self._duration_hours(record) >= expected_duration) >= 5:
+        #     unlocked += 1
+        # return {
+        #     "unlocked_count": unlocked,
+        #     "streak_days": self._estimate_streak_days(),
+        #     "points": unlocked * 50,
+        # }
+        records = self.get_recent_records(9999, sleep_type=SleepType.NIGHT)
+        achievements: list[SleepAchievement] = getattr(self.tracker, "achievements", [])
+        unlocked_count = sum(1 for a in achievements if any(a.fulfilled_by(r) for r in records))
+        streak_days = self._estimate_streak_days()
+        points = unlocked_count * 50
         return {
-            "unlocked_count": unlocked,
-            "streak_days": self._estimate_streak_days(),
-            "points": unlocked * 50,
+            "unlocked_count": unlocked_count, 
+            "streak_days": streak_days, 
+            "points": points, 
         }
 
     def get_map_dashboard(self) -> dict[str, Any]:
