@@ -1,23 +1,20 @@
-"""Safe adapter between UI controllers and the current service layer.
-
-The bridge intentionally keeps UI code independent from unfinished service
-details. It calls MainTracker where stable methods exist, and returns simple
-fallback data where lower-level features are still being implemented.
-"""
+"""UI 控制器与服务层之间的安全桥接。"""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime,timedelta
+from datetime import date, datetime, time, timedelta
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
-import pandas as pd
 import re
 
-from models import SleepEnvironment, SleepRecord, SleepType, SleepAchievement
+import pandas as pd
+
+from models import SleepAchievement, SleepEnvironment, SleepRecord, SleepType
 from service import MainTracker
-from storage import SleepRecordRepository
-from utils.data_processing import StatisticDataAnalyzer,SleepReportBuilder
+from utils.data_processing import SleepReportBuilder
+
 
 @dataclass(slots=True)
 class ActionResult:
@@ -27,61 +24,55 @@ class ActionResult:
 
 
 class ServiceBridge:
-    """UI-facing facade with defensive fallbacks."""
+    """给 UI 使用的门面，尽量屏蔽尚未完成的底层细节。"""
+
+    WEEKDAYS = ["周一", "周二", "周三", "周四", "周五"]
+    ALL_WEEKDAYS = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
 
     def __init__(self, tracker: MainTracker) -> None:
         self.tracker = tracker
         self._fallback_records: list[SleepRecord] = []
-        self.has_planned:bool=False
+        self.has_planned = False
         self.current_timetable_df: pd.DataFrame | None = None
+        self._last_report_summary: str | None = None
 
     def get_home_snapshot(self) -> dict[str, Any]:
         snapshot = self._safe_call(self.tracker.get_ui_snapshot, default={})
         is_sleeping = bool(snapshot.get("is_sleeping", False))
-        goal_hours = 8.0  
-        try:
-            goal = self.tracker.goal_manager.sleep_goal
-            if not goal:
-                goal = self.tracker.repository.load_current_goal()
-            if goal and hasattr(goal, 'target_duration_minutes'):
-                goal_hours = round(goal.target_duration_minutes / 60.0, 1)
-        except Exception as e:
-            print(f"动态获取睡眠目标失败，启用默认兜底值 (8.0h): {e}")
+        goal = self._load_goal()
+        goal_hours = self._goal_hours(goal)
 
-        # 如果当前正在睡觉，显示“正在熟睡中”；如果没有，且已经生成了智能课表方案，可以显示“方案运行中”，否则显示“待记录/就绪”
         if is_sleeping:
-            current_status = "正在熟睡中"
+            current_status = "正在睡眠中"
+        elif self.has_planned:
+            current_status = "方案运行中"
         else:
-            current_status = "方案运行中" if getattr(self, "has_planned", False) else "就绪"
+            current_status = "就绪"
 
         return {
             "is_sleeping": is_sleeping,
-            "today_goal_hours": goal_hours,           
-            "current_status": current_status,         
+            "today_goal_hours": goal_hours,
+            "current_status": current_status,
             "streak_days": self._estimate_streak_days(),
             "record_count": len(self.get_recent_records(9999)),
         }
 
-    def start_sleep(self,
-                    sleep_type:SleepType,
-                    environment:SleepEnvironment,
-                        ) -> ActionResult:
+    def start_sleep(
+        self,
+        sleep_type: SleepType,
+        environment: SleepEnvironment,
+    ) -> ActionResult:
         try:
-            if sleep_type==SleepType.NAP:
-                expected_minutes=30
-            else:
-                goal = self.tracker.goal_manager.sleep_goal
-                if goal and hasattr(goal, "target_duration_minutes"):
-                    expected_minutes = goal.target_duration_minutes
-                else:
-                    expected_minutes = 480 
-            self.tracker.start_sleeping(
+            goal = self._load_goal()
+            expected_minutes = 30 if sleep_type == SleepType.NAP else int(goal.target_duration_minutes)
+            state = self.tracker.start_sleeping(
                 started_at=datetime.now(),
                 expected_duration_minutes=expected_minutes,
                 sleep_type=sleep_type,
                 environment=environment,
             )
-        except Exception as exc:  # noqa: BLE001 - keeps unfinished service safe for UI.
+            state.session.metadata["expected_start_time"] = goal.expected_sleep_start_time
+        except Exception as exc:  # noqa: BLE001
             return ActionResult(False, f"开始睡眠失败：{exc}")
         return ActionResult(True, "已开始记录本次睡眠")
 
@@ -92,26 +83,37 @@ class ServiceBridge:
             fallback = self._finish_sleep_with_ui_fallback()
             if fallback is None:
                 return ActionResult(False, f"结束睡眠失败：{exc}")
-            return ActionResult(True, "底层记录接口尚未完成，已生成一条临时 UI 记录。", fallback)
+            record = fallback
+
+        self._last_report_summary = self._build_single_record_report(record)
         return ActionResult(True, "本次睡眠已记录", record)
 
-    def get_recent_records(self, days: int = 7,sleep_type:SleepType|None=None) -> list[SleepRecord]:
-        records = list(getattr(self.tracker, "all_records", []) or [])
-        records.extend(self._fallback_records)
+    def get_recent_records(
+        self,
+        days: int = 7,
+        sleep_type: SleepType | None = None,
+    ) -> list[SleepRecord]:
+        records = self._collect_records()
+
         if sleep_type is not None:
             records = [r for r in records if r.sleep_type == sleep_type]
+
+        if days < 9999:
+            start_date = date.today() - timedelta(days=days - 1)
+            records = [r for r in records if r.started_at and r.started_at.date() >= start_date]
+
         records.sort(key=lambda record: record.started_at, reverse=True)
-        return records[:days]
+        return records
 
     def get_records_dashboard(self, days: int = 7) -> dict[str, Any]:
         records = self.get_recent_records(days)
-        return {
-            "records": records,
-            "count": len(records),
-        }
+        return {"records": records, "count": len(records), "days": days}
 
     def get_report_dashboard(self, days: int = 7) -> dict[str, Any]:
-        records = self.get_recent_records(days,sleep_type=SleepType.NIGHT)
+        records = self.get_recent_records(days, sleep_type=SleepType.NIGHT)
+        goal = self._load_goal()
+        threshold_hours = self._goal_hours(goal)
+
         if not records:
             return {
                 "avg_sleep_hours": 0.0,
@@ -119,260 +121,214 @@ class ServiceBridge:
                 "avg_wake_time": "--:--",
                 "goal_completion_rate": 0,
                 "score": 0,
+                "record_days": 0,
+                "completed_days": 0,
+                "summary": self._empty_summary(days),
             }
-        goal = self.tracker.goal_manager.sleep_goal
-        threshold_hours = (goal.target_duration_minutes / 60.0) if goal else 8.0
 
         durations = [self._duration_hours(record) for record in records]
         completed_days = sum(1 for value in durations if value >= threshold_hours)
+        grader = SleepReportBuilder()
+        scores = [grader.calculate_sleep_quality(r) for r in records]
+        avg_score = round(sum(scores) / len(scores))
 
-        grader=SleepReportBuilder()
-        avg_score = round(sum(grader.calculate_sleep_quality(r) for r in records) / len(records))
-        
+        summary = self._build_period_summary(records, durations, completed_days, days)
         return {
             "avg_sleep_hours": round(sum(durations) / len(durations), 1),
-            "avg_sleep_time": self._average_time_text(
-                [record.started_at for record in records]
-            ),
-            "avg_wake_time": self._average_time_text(
-                [record.ended_at for record in records]
-            ),
+            "avg_sleep_time": self._average_time_text([r.started_at for r in records], night_start=True),
+            "avg_wake_time": self._average_time_text([r.ended_at for r in records]),
             "goal_completion_rate": round(completed_days / len(records) * 100),
             "score": min(100, avg_score),
+            "record_days": len(records),
+            "completed_days": completed_days,
+            "summary": summary,
         }
 
     def get_goal_dashboard(self) -> dict[str, Any]:
-        # 1. 优先从内存获取当前的睡眠目标
-        goal = self.tracker.goal_manager.sleep_goal
-        
-        # 2. 如果内存为空（如冷启动），主动去本地存储中捞取当前目标
-        if not goal:
-            goal = self.tracker.storage_manager.load_current_goal()
-            self.tracker.goal_manager.sleep_goal = goal  
+        goal = self._load_goal()
+        target_hours = self._goal_hours(goal)
+        week_start = date.today() - timedelta(days=date.today().weekday())
+        weekly_completion = [False] * 7
 
-        # 3.统一将目标时长转换为【小时数】进行后续的比对与展示
-        if goal and goal.target_duration_minutes: 
-            expected_hours = goal.target_duration_minutes / 60.0
-        else:
-            expected_hours = 8.0  
-            
-        # 4. 获取最近几天的睡眠记录（这里会自动使用 record 身体里当时自带的快照进行后续历史比对）
-        records = self.get_recent_records(7)
-        
-        # 5. 判定在这几天内，有多少天实际睡眠时间达到了【当时的目标小时数】
-        done = 0
-        if records:
-            for record in records:
-                if self._duration_hours(record) >= round(record.expected_duration_minutes/60, 1):
-                    done += 1
-        # 6. 计算达成率
-        rate = round((done / 7) * 100) 
+        for record in self.get_recent_records(14, sleep_type=SleepType.NIGHT):
+            record_date = record.started_at.date()
+            if week_start <= record_date <= week_start + timedelta(days=6):
+                expected = (record.expected_duration_minutes or goal.target_duration_minutes) / 60
+                weekly_completion[record_date.weekday()] = self._duration_hours(record) >= expected
+
+        done = sum(weekly_completion)
         return {
-            "target_hours": expected_hours, 
+            "target_hours": target_hours,
             "done_days": done,
             "total_days": 7,
-            "rate": rate,
+            "rate": round(done / 7 * 100),
+            "weekly_completion": weekly_completion,
         }
 
     def get_achievement_dashboard(self) -> dict[str, Any]:
-        # goal=self.tracker.goal_manager.sleep_goal
-        # if goal and getattr(goal, "expected_sleep_start_time", None):
-        #     expected_start_time = goal.expected_sleep_start_time.time()
-        # else:
-        #     expected_start_time = time(23, 30)
-
-        # if goal and getattr(goal, "target_duration_minutes", None):
-        #     expected_duration = goal.target_duration_minutes / 60.0
-        # else:
-        #     expected_duration = 8.0
-        # records = self.get_recent_records(9999,sleep_type=SleepType.NIGHT)
-        # unlocked = 0
-        # if records:
-        #     unlocked += 1
-        # if any(record.started_at.time() <= expected_start_time for record in records):
-        #     unlocked += 1
-        # if len(records) >= 3:
-        #     unlocked += 1
-        # if sum(1 for record in records if self._duration_hours(record) >= expected_duration) >= 5:
-        #     unlocked += 1
-        # return {
-        #     "unlocked_count": unlocked,
-        #     "streak_days": self._estimate_streak_days(),
-        #     "points": unlocked * 50,
-        # }
-        records = self.get_recent_records(9999, sleep_type=SleepType.NIGHT)
-        achievements: list[SleepAchievement] = getattr(self.tracker, "achievements", [])
-        unlocked_count = sum(1 for a in achievements if any(a.fulfilled_by(r) for r in records))
-        streak_days = self._estimate_streak_days()
-        points = unlocked_count * 50
+        achievement_lists = self.get_achievement_lists()
+        unlocked_count = len(achievement_lists["unlocked"])
         return {
-            "unlocked_count": unlocked_count, 
-            "streak_days": streak_days, 
-            "points": points, 
+            "unlocked_count": unlocked_count,
+            "streak_days": self._estimate_streak_days(),
+            "points": unlocked_count * 50,
         }
+
+    def get_achievement_lists(self) -> dict[str, list[SleepAchievement]]:
+        records = self.get_recent_records(9999, sleep_type=SleepType.NIGHT)
+        manager = getattr(self.tracker, "achievement_manager", None)
+        achievements: list[SleepAchievement] = getattr(manager, "all_achievements", []) if manager else []
+        dev_achievement = self._load_developer_state().get("achievement", {})
+
+        auto_unlocked = {
+            achievement.achievement_id
+            for achievement in achievements
+            if any(achievement.fulfilled_by(record) for record in records)
+        }
+        manual_unlocked = set(dev_achievement.get("unlocked_ids", []))
+        manual_locked = set(dev_achievement.get("locked_ids", []))
+        unlocked_ids = (auto_unlocked | manual_unlocked) - manual_locked
+
+        unlocked = [
+            achievement
+            for achievement in achievements
+            if achievement.achievement_id in unlocked_ids
+        ]
+        locked = [
+            achievement
+            for achievement in achievements
+            if achievement.achievement_id not in unlocked_ids
+        ]
+        return {"unlocked": unlocked, "locked": locked}
 
     def get_map_dashboard(self) -> dict[str, Any]:
         count = len(self.get_recent_records(9999))
-        unlocked = min(4, 1 + count // 2) if count else 0
+        auto_unlocked = min(4, 1 + count // 2) if count else 0
+        dev_map = self._load_developer_state().get("map", {})
+        manual_nodes = dev_map.get("unlocked_node_ids", []) or []
+        total_count = int(dev_map.get("total_count") or 4)
+        total_count = max(total_count, len(manual_nodes), 1)
+
+        if dev_map.get("unlocked_count") is None:
+            unlocked = max(auto_unlocked, len(manual_nodes))
+        else:
+            unlocked = int(dev_map.get("unlocked_count") or 0)
+        unlocked = max(0, min(unlocked, total_count))
+
+        recommended_node = dev_map.get("recommended_node")
+        if not recommended_node:
+            recommended_node = "图书馆" if unlocked >= 2 else "西门"
+
         return {
             "unlocked_count": unlocked,
-            "total_count": 4,
-            "recommended_node": "图书馆" if unlocked >= 2 else "西门",
+            "total_count": total_count,
+            "recommended_node": recommended_node,
         }
-    
+
     def upload_timetable(self, file_path: str) -> bool:
-        """
-        解析学校选课网导出的标准 Excel 课表（已支持旧版 .xls 并且强行剥离周六日）
-        """
         try:
-            # 1. 自动根据后缀选择引擎读取 xls / xlsx
-            if file_path.endswith('.xls'):
-                df = pd.read_excel(file_path, sheet_name=0, engine='xlrd')
+            suffix = Path(file_path).suffix.lower()
+            if suffix == ".xls":
+                df = pd.read_excel(file_path, sheet_name=0, engine="xlrd")
             else:
                 df = pd.read_excel(file_path, sheet_name=0)
-            
-            # 2. 清洗列名，去掉前后空格
+
             df.columns = [str(c).strip() for c in df.columns]
-            
-            # 清洗
-            rename_dict = {
-                "星期一": "周一", "星期二": "周二", "星期三": "周三", 
-                "星期四": "周四", "星期五": "周五", "星期六": "周六", "星期日": "周日"
-            }
-            df.rename(columns=rename_dict, inplace=True)
-            
-            # 4. 只保留周一 ~ 周五
-            keep_columns = ["节数", "周一", "周二", "周三", "周四", "周五"]
-            # 过滤出表格中实际存在的有效工作日列，防闪退
+            df = self._normalize_timetable_columns(df)
+            keep_columns = ["节数", *self.WEEKDAYS]
             final_columns = [col for col in keep_columns if col in df.columns]
-            df = df[final_columns]
-            
-            self.current_timetable_df = df
-            self.has_planned = False  # 上传新课表，重置规划状态
+            self.current_timetable_df = df[final_columns] if final_columns else df
+            self.has_planned = False
             return True
-            
-        except Exception as e:
-            print(f"解析课表 Excel 失败: {e}")
+        except Exception as exc:  # noqa: BLE001
+            print(f"解析课表 Excel 失败：{exc}")
             return False
 
     def _parse_cell_content(self, cell_value: Any) -> dict[str, str] | None:
-        """
-        专门处理两块内容间无空格、中英括号混杂的紧凑文本。
-        """
-        if pd.isna(cell_value) or str(cell_value).strip() == "":
-            return None
-            
-        raw_text = str(cell_value).strip()
-        
-        if '(' not in raw_text:
-            return None
-            
-        try:
-            # 1. 切出课程名称
-            course_name = raw_text.split('(', 1)[0].strip()
-            
-            # 2. 剥离并切出上课地点
-            right_part = raw_text.split('(', 1)[1]
-            
-            if ')(' in right_part:
-                location = right_part.split(')(', 1)[0].strip()
-            else:
-                location = right_part.split(')', 1)[0].strip()
-                
-            if not course_name:
-                return None
-                
-            return {
-                "name": course_name,
-                "location": location if location else "暂无上课教室数据"
-            }
-            
-        except Exception as e:
-            print(f"⚠️ 解析单元格时遇到异常跳过: {e}")
+        """解析选课网单元格，兼容课程名里自带括号的情况。"""
+        if pd.isna(cell_value):
             return None
 
+        raw_text = str(cell_value).strip()
+        if not raw_text:
+            return None
+
+        line = next((part.strip() for part in re.split(r"[\r\n]+", raw_text) if part.strip()), "")
+        if not line:
+            return None
+
+        groups = list(self._iter_parenthesized_groups(line))
+        if not groups:
+            return {"name": line, "location": "暂无上课地点数据"}
+
+        location_group = None
+        for group in groups:
+            if self._looks_like_location(group["text"]):
+                location_group = group
+                break
+
+        if location_group is None:
+            first = groups[0]
+            if not self._looks_like_course_suffix(first["text"]):
+                location_group = first
+
+        if location_group is None:
+            return {"name": line, "location": "暂无上课地点数据"}
+
+        name = line[: location_group["start"]].strip()
+        name = re.sub(r"\s+", " ", name).strip(" -")
+        return {
+            "name": name or line[: location_group["start"]].strip() or "未命名课程",
+            "location": location_group["text"].strip() or "暂无上课地点数据",
+        }
+
     def calculate_planning(self) -> dict[str, Any]:
-        """
-        智能规划算法
-        """
         if self.current_timetable_df is None:
             return {}
 
         df = self.current_timetable_df
-        
-        # 1. 获取睡眠目标基准
-        goal = None
-        # 尝试通过 goal_manager 获取
-        if hasattr(self.tracker, 'goal_manager') and self.tracker.goal_manager:
-            goal = self.tracker.goal_manager.sleep_goal
-        # 如果 manager 里没有，且 repository 存在，尝试从仓库加载
-        if not goal and hasattr(self.tracker, 'repository') and self.tracker.repository:
-            try:
-                goal = self.tracker.repository.load_current_goal()
-            except Exception as e:
-                print(f"⚠️  从 repository 加载目标失败: {e}")
-        if goal:
-            target_hours = (goal.target_duration_minutes / 60.0)
-            expected_start = goal.expected_sleep_start_time
-        else:
-            target_hours = 8.0
-            expected_start = datetime.strptime("23:30", "%H:%M")
+        goal = self._load_goal()
+        target_hours = self._goal_hours(goal)
+        expected_start = goal.expected_sleep_start_time or datetime.strptime("23:30", "%H:%M")
+        available_days = [day for day in self.WEEKDAYS if day in df.columns]
 
-        # 2. 工作日早八判定 (周一到周五第 0 行)
-        has_early_eight = False
-        work_days = ["周一", "周二", "周三", "周四", "周五"]
-        available_work_days = [day for day in work_days if day in df.columns]
-        
-        for day in available_work_days:
-            if len(df) > 0:
-                cell_data = df.at[0, day]
-                if self._parse_cell_content(cell_data):
-                    has_early_eight = True
-                    break
+        has_early_class = any(
+            len(df) > 0 and self._parse_cell_content(df.at[0, day])
+            for day in available_days
+        )
 
-        # 3. 规划夜间睡眠
-        if has_early_eight:
+        if has_early_class:
             wake_time = datetime.strptime("07:00", "%H:%M")
             sleep_time = wake_time - timedelta(hours=target_hours)
         else:
             sleep_time = expected_start
             wake_time = sleep_time + timedelta(hours=target_hours)
 
-        night_sleep_str = f"{sleep_time.strftime('%H:%M')} - {wake_time.strftime('%H:%M')}"
+        recommend_nap_days: list[str] = []
+        unique_places: set[str] = set()
 
-        # 4. 判定午休星期与上课地点收集（仅在周一到周五内闭环计算）
-        recommend_nap_days = []
-        unique_places = set()
-        
-        for day in available_work_days:
-            # 检查第 4 节（Index 3）和第 5 节（Index 4）
-            has_class_4 = self._parse_cell_content(df.at[3, day]) is not None if len(df) > 3 else False
-            has_class_5 = self._parse_cell_content(df.at[4, day]) is not None if len(df) > 4 else False
-            
+        for day in available_days:
+            has_class_4 = len(df) > 3 and self._parse_cell_content(df.at[3, day]) is not None
+            has_class_5 = len(df) > 4 and self._parse_cell_content(df.at[4, day]) is not None
             if not has_class_4 and not has_class_5:
                 recommend_nap_days.append(day)
-            
-            # 遍历全天 12 节课，收集有效的上课地点
+
             for row_idx in range(len(df)):
                 course = self._parse_cell_content(df.at[row_idx, day])
                 if course:
                     loc = course["location"]
-                    if loc and "暂无" not in loc and "数据" not in loc and "II" not in loc:
+                    if loc and "暂无" not in loc and "数据" not in loc:
                         unique_places.add(loc)
 
-        # 5. 组装最终建议
-        nap_str = "/".join(recommend_nap_days) + " 13:00-13:30" if recommend_nap_days else "本周无合适午休空档"
-        places_str = "、".join(list(unique_places)) if unique_places else "宿舍"
-
         self.has_planned = True
-
         return {
-            "night_sleep": night_sleep_str,
-            "nap": nap_str,
-            "places": places_str,
+            "night_sleep": f"{sleep_time:%H:%M} - {wake_time:%H:%M}",
+            "nap": f"{'/'.join(recommend_nap_days)} 13:00-13:30"
+            if recommend_nap_days
+            else "本周暂无合适午休空档",
+            "places": "、".join(sorted(unique_places)) if unique_places else "宿舍",
         }
-    
-        
+
     def get_planning_dashboard(self) -> dict[str, Any]:
         if self.has_planned:
             return self.calculate_planning()
@@ -382,9 +338,123 @@ class ServiceBridge:
             "places": "--",
         }
 
+    def _collect_records(self) -> list[SleepRecord]:
+        records: list[SleepRecord] = []
+        records.extend(getattr(self.tracker, "all_records", []) or [])
+        records.extend(self._fallback_records)
+
+        repository = getattr(self.tracker, "repository", None)
+        if repository is not None:
+            try:
+                records.extend(repository.user_list(getattr(self.tracker, "user_id", "")))
+            except Exception as exc:  # noqa: BLE001
+                print(f"读取历史睡眠记录失败：{exc}")
+
+        unique: dict[str, SleepRecord] = {}
+        for record in records:
+            if record.started_at and record.ended_at:
+                unique[record.record_id] = record
+        return list(unique.values())
+
+    def _load_goal(self):
+        goal = None
+        goal_manager = getattr(self.tracker, "goal_manager", None)
+        if goal_manager is not None:
+            goal = goal_manager.sleep_goal
+
+        if goal is None:
+            repository = getattr(self.tracker, "repository", None)
+            if repository is not None:
+                goal = repository.load_current_goal()
+                if goal_manager is not None:
+                    goal_manager.sleep_goal = goal
+
+        if goal is None:
+            from models import SleepGoal
+
+            goal = SleepGoal(
+                target_value=8.0,
+                target_duration_minutes=480,
+                expected_sleep_start_time=datetime.strptime("23:30", "%H:%M"),
+                difficulty_level=1,
+            )
+        return goal
+
+    def _load_developer_state(self) -> dict[str, Any]:
+        repository = getattr(self.tracker, "repository", None)
+        if repository is not None and hasattr(repository, "load_developer_state"):
+            return repository.load_developer_state()
+        return {
+            "achievement": {"unlocked_ids": [], "locked_ids": []},
+            "map": {
+                "unlocked_node_ids": [],
+                "unlocked_count": None,
+                "total_count": 4,
+                "recommended_node": None,
+            },
+        }
+
+    @staticmethod
+    def _goal_hours(goal: Any) -> float:
+        minutes = getattr(goal, "target_duration_minutes", None) or 480
+        return round(minutes / 60.0, 1)
+
+    def _build_single_record_report(self, record: SleepRecord) -> str:
+        try:
+            report = self.tracker.generate_sleep_report(record)
+            return report.summary or ""
+        except Exception:  # noqa: BLE001
+            hours = self._duration_hours(record)
+            return f"本次睡眠 {hours:.1f} 小时，记录已保存。"
+
+    def _build_period_summary(
+        self,
+        records: list[SleepRecord],
+        durations: list[float],
+        completed_days: int,
+        days: int,
+    ) -> list[tuple[str, str]]:
+        avg_duration = round(sum(durations) / len(durations), 1)
+        rate = round(completed_days / len(records) * 100)
+
+        if avg_duration >= 8:
+            duration_text = f"平均睡眠 {avg_duration:.1f} 小时，睡眠时长比较充足。"
+        elif avg_duration >= 7:
+            duration_text = f"平均睡眠 {avg_duration:.1f} 小时，整体接近目标。"
+        else:
+            duration_text = f"平均睡眠 {avg_duration:.1f} 小时，建议优先补足夜间睡眠。"
+
+        if rate >= 80:
+            goal_text = f"本期达标率 {rate}%，目标完成情况很好。"
+        elif rate >= 50:
+            goal_text = f"本期达标率 {rate}%，仍有提升空间。"
+        else:
+            goal_text = f"本期达标率 {rate}%，可以先从固定入睡时间开始。"
+
+        record_text = f"最近 {days} 天内有 {len(records)} 条夜间睡眠记录。"
+        return [("记录覆盖", record_text), ("时长表现", duration_text), ("目标完成", goal_text)]
+
+    @staticmethod
+    def _empty_summary(days: int) -> list[tuple[str, str]]:
+        return [
+            ("记录覆盖", f"最近 {days} 天暂无夜间睡眠记录。"),
+            ("时长表现", "完成一次睡眠打卡后即可生成趋势分析。"),
+            ("目标完成", "暂无数据时，本周完成圆点保持未点亮。"),
+        ]
+
     def _estimate_streak_days(self) -> int:
-        records = self.get_recent_records(9999)
-        return min(7, sum(1 for record in records if self._duration_hours(record) >= 7.0))
+        records = self.get_recent_records(9999, sleep_type=SleepType.NIGHT)
+        completed_dates = {
+            record.started_at.date()
+            for record in records
+            if self._duration_hours(record) >= 7.0
+        }
+        streak = 0
+        cursor = date.today()
+        while cursor in completed_dates:
+            streak += 1
+            cursor -= timedelta(days=1)
+        return streak
 
     def _finish_sleep_with_ui_fallback(self) -> SleepRecord | None:
         session = getattr(self.tracker, "active_session", None)
@@ -392,26 +462,30 @@ class ServiceBridge:
             return None
 
         ended_at = datetime.now()
-        kwargs = {
-            "record_id": uuid4().hex,
-            "user_id": session.user_id,
-            "started_at": session.started_at,
-            "ended_at": ended_at,
-            "expected_duration_minutes": session.expected_duration_minutes,
-            "sleep_type": session.sleep_type,
-            "environment": session.environment,
-            "interruptions": tuple(session.interruptions),
-        }
-        try:
-            record = SleepRecord(expected_start_time=session.started_at, **kwargs)
-        except TypeError:
-            record = SleepRecord(**kwargs)
-
+        expected_start = session.metadata.get("expected_start_time", session.started_at)
+        record = SleepRecord(
+            record_id=uuid4().hex,
+            user_id=session.user_id,
+            started_at=session.started_at,
+            ended_at=ended_at,
+            expected_duration_minutes=session.expected_duration_minutes,
+            expected_start_time=expected_start,
+            sleep_type=session.sleep_type,
+            environment=session.environment,
+            interruptions=tuple(session.interruptions),
+        )
         self._fallback_records.append(record)
+
+        repository = getattr(self.tracker, "repository", None)
+        if repository is not None:
+            repository.save(record)
+
         sleep_manager = getattr(self.tracker, "sleep_manager", None)
         if sleep_manager is not None:
             sleep_manager.current_state = None
             sleep_manager.active_session = None
+            sleep_manager.latest_record = record
+            sleep_manager.all_records.append(record)
         return record
 
     @staticmethod
@@ -420,12 +494,83 @@ class ServiceBridge:
         return round(minutes / 60, 1)
 
     @staticmethod
-    def _average_time_text(values: list[datetime]) -> str:
+    def _average_time_text(values: list[datetime], night_start: bool = False) -> str:
         if not values:
             return "--:--"
-        minutes = [value.hour * 60 + value.minute for value in values]
-        avg = round(sum(minutes) / len(minutes))
-        return f"{avg // 60 % 24:02d}:{avg % 60:02d}"
+        minutes = []
+        for value in values:
+            total = value.hour * 60 + value.minute
+            if night_start and total < 12 * 60:
+                total += 24 * 60
+            minutes.append(total)
+        avg = round(sum(minutes) / len(minutes)) % (24 * 60)
+        return f"{avg // 60:02d}:{avg % 60:02d}"
+
+    @staticmethod
+    def _normalize_timetable_columns(df: pd.DataFrame) -> pd.DataFrame:
+        rename_dict = {
+            "节次": "节数",
+            "节数": "节数",
+            "星期一": "周一",
+            "星期二": "周二",
+            "星期三": "周三",
+            "星期四": "周四",
+            "星期五": "周五",
+            "星期六": "周六",
+            "星期日": "周日",
+            "星期天": "周日",
+            "周一": "周一",
+            "周二": "周二",
+            "周三": "周三",
+            "周四": "周四",
+            "周五": "周五",
+            "周六": "周六",
+            "周日": "周日",
+        }
+        return df.rename(columns={col: rename_dict.get(str(col).strip(), col) for col in df.columns})
+
+    @staticmethod
+    def _iter_parenthesized_groups(text: str):
+        stack: list[tuple[str, int]] = []
+        pairs = {")": "(", "）": "（"}
+        for idx, char in enumerate(text):
+            if char in "(（":
+                stack.append((char, idx))
+            elif char in ")）" and stack and stack[-1][0] == pairs[char]:
+                _, start = stack.pop()
+                if not stack:
+                    yield {"text": text[start + 1 : idx], "start": start, "end": idx + 1}
+
+    @staticmethod
+    def _looks_like_location(text: str) -> bool:
+        value = text.strip()
+        if not value:
+            return False
+        location_words = (
+            "楼",
+            "馆",
+            "院",
+            "室",
+            "厅",
+            "场",
+            "中心",
+            "教",
+            "校区",
+            "实验",
+            "理教",
+            "二教",
+            "三教",
+            "四教",
+            "文史",
+            "地学",
+            "逸夫",
+        )
+        return any(word in value for word in location_words) or bool(re.search(r"\d{3,4}", value))
+
+    @staticmethod
+    def _looks_like_course_suffix(text: str) -> bool:
+        value = text.strip().upper()
+        return bool(re.fullmatch(r"[IVXLCDM]+|[A-Z]|[A-Z]+[0-9]*", value))
 
     @staticmethod
     def _safe_call(callback: object, default: Any) -> Any:

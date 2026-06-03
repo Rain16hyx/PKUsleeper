@@ -1,6 +1,6 @@
 """睡眠数据分析与处理方法"""
 #Q:如果睡眠数据不完整，是否考虑提示用户补全？目前方法是直接返回0分
-from models import SleepRecord,SleepEnvironment,SleepInterruption
+from models import SleepRecord,SleepEnvironment,SleepInterruption,SleepType,SleepReport
 from typing import Protocol
 from storage import *
 from datetime import *
@@ -23,7 +23,7 @@ class SleepReportBuilder():
             return 0.0
         
         duration_minutes=(record.ended_at - record.started_at).total_seconds() / 60
-        if record.sleep_type=="night":
+        if record.sleep_type == SleepType.NIGHT:
             #45 for duration
             expected=record.expected_duration_minutes or 480
             rate=duration_minutes/expected
@@ -35,8 +35,15 @@ class SleepReportBuilder():
             elif record.started_at.time()<=record.expected_start_time.time():
                 go_to_bed_time_score=25
             else:
-                delay_time_minutes=(record.started_at-record.expected_start_time).total_seconds()/60
-                go_to_bed_time_score=max(0.0,25*(record.expected_duration_minutes-delay_time_minutes)/record.expected_duration_minutes)
+                # 目标入睡时间只表示钟点，不能直接拿日期相减。
+                start_minutes=record.started_at.hour*60+record.started_at.minute
+                expected_minutes=record.expected_start_time.hour*60+record.expected_start_time.minute
+                if start_minutes<12*60:
+                    start_minutes+=24*60
+                if expected_minutes<12*60:
+                    expected_minutes+=24*60
+                delay_time_minutes=max(0,start_minutes-expected_minutes)
+                go_to_bed_time_score=max(0.0,25*(expected-delay_time_minutes)/expected)
 
             #30 for interruptions：每次间断，<=5min-5，>5min多5分钟每2min扣1分，最多30分
             interruption_score=30
@@ -53,7 +60,7 @@ class SleepReportBuilder():
             score_for_night_quality=duration_score+go_to_bed_time_score+interruption_score
             return score_for_night_quality
         
-        if record.sleep_type=="nap":
+        if record.sleep_type == SleepType.NAP:
             #20 for nap duration: 0-30min:20, 30-60min:10, >60min:0
             if duration_minutes<=30:
                 score_for_nap=20
@@ -62,6 +69,7 @@ class SleepReportBuilder():
             else:
                 score_for_nap=0
             return score_for_nap
+        return 0.0
 
 
     def generate_report(self,record: SleepRecord) -> str:

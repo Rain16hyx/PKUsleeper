@@ -83,6 +83,10 @@ class SleepingState(State):
             started_at=self.session.started_at,
             ended_at=ended_at,
             expected_duration_minutes=self.session.expected_duration_minutes,
+            expected_start_time=self.session.metadata.get(
+                "expected_start_time",
+                self.session.started_at,
+            ),
             sleep_type=self.session.sleep_type,
             environment=self.session.environment,
             interruptions=tuple(self.session.interruptions),
@@ -360,30 +364,3 @@ class SleepHistoryState(State):
 
     def name(self) -> str:
         return "sleep_history"
-
-    def add_manual_record(
-        self,
-        started_at: datetime,
-        ended_at: datetime,
-        sleep_type: SleepType = SleepType.NIGHT,
-        environment: SleepEnvironment = SleepEnvironment.DORMITORY,
-    ) -> SleepRecord:
-        """Create and store a manually entered sleep record."""
-        raise NotImplementedError
-
-    def edit_existing_record(
-        self,
-        record_id: str,
-        new_started_at: datetime,
-        new_ended_at: datetime,
-    ) -> SleepRecord:
-        """Edit an existing sleep record."""
-        raise NotImplementedError
-
-    def get_calendar_view(self, year: int, month: int) -> dict[str, dict[str, Any]]:
-        """Return calendar data for sleep history."""
-        raise NotImplementedError
-
-    def calculate_statistics(self, time_span_days: int) -> dict[str, Any]:
-        """Return sleep statistics for a time span."""
-        raise NotImplementedError

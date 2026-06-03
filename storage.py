@@ -1,162 +1,201 @@
-"""睡眠数据存储模块"""
+"""睡眠数据和调试状态的本地存储。"""
 
 from __future__ import annotations
-from pathlib import Path
-from models import *
-import json
-from dataclasses import asdict 
-from datetime import datetime
 
+from dataclasses import asdict
+from datetime import datetime
+import json
+from pathlib import Path
+from typing import Any
+
+from models import (
+    SleepEnvironment,
+    SleepGoal,
+    SleepInterruption,
+    SleepRecord,
+    SleepType,
+)
 
 
 class SleepRecordRepository:
-    """睡眠数据管理器"""
+    """管理单个用户的本地 JSON 数据。"""
 
     def __init__(self, user_id: str, data_dir: Path | str) -> None:
         self.user_id = user_id
-        self.data_dir = Path(data_dir)/user_id
+        self.data_dir = Path(data_dir) / user_id
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.goal_file_path = self.data_dir / "sleep_goal.json"
+        self.dev_state_file_path = self.data_dir / "dev_state.json"
 
     def get_file_path(self, record_id: str) -> Path:
-        """根据睡眠记录ID获取对应的数据文件路径"""
         return self.data_dir / f"record_{record_id}.json"
-    
+
     def save(self, record: SleepRecord) -> None:
-        """保存睡眠数据到数据文件夹"""
-        file_path = self.get_file_path(record.record_id)
         record_dict = asdict(record)
-        #起止时间、期望入睡时间、睡眠类型、环境
-        record_dict["started_at"] = record.started_at.isoformat() if record.started_at else None
-        record_dict["ended_at"] = record.ended_at.isoformat() if record.ended_at else None
-        record_dict["expected_start_time"] = record.expected_start_time.isoformat() if record.expected_start_time else None
+        record_dict["started_at"] = self._datetime_to_text(record.started_at)
+        record_dict["ended_at"] = self._datetime_to_text(record.ended_at)
+        record_dict["expected_start_time"] = self._datetime_to_text(record.expected_start_time)
         record_dict["sleep_type"] = record.sleep_type.value
         record_dict["environment"] = record.environment.value
-        #中断
-        if "interruptions" in record_dict:
-            for item in record_dict['interruptions']:
-                if item['started_at'] and isinstance(item['started_at'], datetime):
-                    item['started_at'] = item['started_at'].isoformat()
-                if item.get('ended_at') and isinstance(item['ended_at'], datetime):
-                    item['ended_at'] = item['ended_at'].isoformat()
-        with open(file_path, "w", encoding="utf-8") as f:
+
+        for item in record_dict.get("interruptions", []):
+            item["started_at"] = self._datetime_to_text(item.get("started_at"))
+            item["ended_at"] = self._datetime_to_text(item.get("ended_at"))
+
+        with open(self.get_file_path(record.record_id), "w", encoding="utf-8") as f:
             json.dump(record_dict, f, ensure_ascii=False, indent=4)
 
-
     def get_by_id(self, record_id: str) -> SleepRecord | None:
-        """从数据文件夹读取指定睡眠记录"""
-        file_path=self.get_file_path(record_id)
+        file_path = self.get_file_path(record_id)
         if not file_path.exists():
             return None
+
         try:
-            with open(file_path,"r",encoding="utf-8") as f:
-                data=json.load(f)
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
         except json.JSONDecodeError:
             return None
-        
-        #还原时间
-        data["started_at"] = datetime.fromisoformat(data["started_at"]) if data.get("started_at") else None
-        data["ended_at"] = datetime.fromisoformat(data["ended_at"]) if data.get("ended_at") else None
-        data["expected_start_time"] = datetime.fromisoformat(data["expected_start_time"]) if data.get("expected_start_time") else None
-        #还原中断数据
-        if "interruptions" in data:
-            restored_interruptions = []
-            for item in data["interruptions"]:
-                # 将字符串解析回 datetime
-                item["started_at"] = datetime.fromisoformat(item["started_at"]) if item.get("started_at") else None
-                if item.get("ended_at"):
-                    item["ended_at"] = datetime.fromisoformat(item["ended_at"])
-                else:
-                    item["ended_at"] = None
-                # 核心：利用解包（**item）将字典重新变成 SleepInterruption 对象
-                interruption_obj = SleepInterruption(**item)
-                restored_interruptions.append(interruption_obj)
-    
-            data["interruptions"] = tuple(restored_interruptions)
 
-        #还原睡眠类型、环境
+        data["started_at"] = self._text_to_datetime(data.get("started_at"))
+        data["ended_at"] = self._text_to_datetime(data.get("ended_at"))
+        data["expected_start_time"] = self._text_to_datetime(data.get("expected_start_time"))
         data["sleep_type"] = SleepType(data["sleep_type"])
         data["environment"] = SleepEnvironment(data["environment"])
+
+        restored_interruptions = []
+        for item in data.get("interruptions", []):
+            item["started_at"] = self._text_to_datetime(item.get("started_at"))
+            item["ended_at"] = self._text_to_datetime(item.get("ended_at"))
+            restored_interruptions.append(SleepInterruption(**item))
+        data["interruptions"] = tuple(restored_interruptions)
+
         return SleepRecord(**data)
 
-    #注意：可能包含不完整的睡眠数据！   
     def user_list(self, user_id: str) -> list[SleepRecord]:
-        """从数据文件夹读取指定用户的所有睡眠记录"""
         records = []
         for file_path in self.data_dir.glob("record_*.json"):
             try:
-                record_id=file_path.stem.replace("record_","")
+                record_id = file_path.stem.replace("record_", "")
                 record = self.get_by_id(record_id)
                 if record:
                     records.append(record)
             except Exception:
                 continue
-                    
-        # 按入睡时间从早到晚排序
-        records.sort(key=lambda x: x.started_at if x.started_at else datetime.min)
-        return records 
+
+        records.sort(key=lambda record: record.started_at if record.started_at else datetime.min)
+        return records
 
     def delete(self, record_id: str) -> None:
-        """从数据文件夹删除指定睡眠记录"""
         file_path = self.get_file_path(record_id)
         if file_path.exists():
-            file_path.unlink() 
-    
+            file_path.unlink()
+
+    def clear_records(self) -> int:
+        count = 0
+        for file_path in self.data_dir.glob("record_*.json"):
+            file_path.unlink()
+            count += 1
+        return count
+
     def load_current_goal(self) -> SleepGoal:
-        """
-        从用户专属文件夹下的 sleep_goal.json 中读取当前的睡眠目标。
-        如果文件不存在（新用户冷启动），返回安全的默认目标，确保程序不闪退。
-        """
         if not self.goal_file_path.exists():
-            default_time = datetime.strptime("23:30", "%H:%M")
-            return SleepGoal(
-                target_value=8.0,
-                target_duration_minutes=480,
-                expected_sleep_start_time=default_time,
-                difficulty_level=1
-            )
-        
+            return self._default_goal()
+
         try:
             with open(self.goal_file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                
-            # 将 JSON 中的时间字符串还原为 Python 的 datetime 对象
-            start_time_obj = None
-            if data.get("expected_sleep_start_time"):
-                start_time_obj = datetime.strptime(data["expected_sleep_start_time"], "%H:%M")
-            
+
+            start_time = datetime.strptime(data["expected_sleep_start_time"], "%H:%M")
             return SleepGoal(
                 target_value=data.get("target_value", 8.0),
                 target_duration_minutes=data.get("target_duration_minutes", 480),
-                expected_sleep_start_time=start_time_obj,
-                difficulty_level=data.get("difficulty_level", 1)
+                expected_sleep_start_time=start_time,
+                difficulty_level=data.get("difficulty_level", 1),
             )
-        except Exception as e:
-            print(f"用户 {self.user_id} 读取当前睡眠目标失败，降级使用默认值: {e}")
-            # 异常隔离：文件损坏或格式不对时同样返回默认值，防止主程序崩溃
-            return SleepGoal(goal_id=f"global_core_goal_{self.user_id}", target_duration_minutes=480)
+        except Exception as exc:
+            print(f"用户 {self.user_id} 读取当前睡眠目标失败，降级使用默认值: {exc}")
+            return self._default_goal()
 
     def save_current_goal(self, goal: SleepGoal) -> None:
-        """
-        将用户最新修改的当前睡眠目标持久化写入到本地 sleep_goal.json 文件。
-        """
         if not goal:
             return
-            
-        # 序列化清洗：把 datetime 对象转换成 JSON 可读的字符串 "HH:MM"
-        start_time_str = ""
-        if goal.expected_sleep_start_time:
-            start_time_str = goal.expected_sleep_start_time.strftime("%H:%M")
 
         payload = {
             "target_value": goal.target_value,
             "target_duration_minutes": goal.target_duration_minutes,
-            "expected_sleep_start_time": start_time_str,
-            "difficulty_level": goal.difficulty_level
+            "expected_sleep_start_time": goal.expected_sleep_start_time.strftime("%H:%M")
+            if goal.expected_sleep_start_time
+            else "",
+            "difficulty_level": goal.difficulty_level,
         }
-        
+
         try:
             with open(self.goal_file_path, "w", encoding="utf-8") as f:
                 json.dump(payload, f, ensure_ascii=False, indent=4)
-        except Exception as e:
-            print(f"用户 {self.user_id} 持久化当前睡眠目标失败: {e}")
+        except Exception as exc:
+            print(f"用户 {self.user_id} 持久化当前睡眠目标失败: {exc}")
+
+    def load_developer_state(self) -> dict[str, Any]:
+        state = self._default_developer_state()
+        if not self.dev_state_file_path.exists():
+            return state
+
+        try:
+            with open(self.dev_state_file_path, "r", encoding="utf-8") as f:
+                raw = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            return state
+
+        if isinstance(raw, dict):
+            self._merge_state(state, raw)
+        return state
+
+    def save_developer_state(self, state: dict[str, Any]) -> None:
+        normalized = self._default_developer_state()
+        self._merge_state(normalized, state)
+        with open(self.dev_state_file_path, "w", encoding="utf-8") as f:
+            json.dump(normalized, f, ensure_ascii=False, indent=4)
+
+    def reset_developer_state(self) -> None:
+        if self.dev_state_file_path.exists():
+            self.dev_state_file_path.unlink()
+
+    @staticmethod
+    def _default_goal() -> SleepGoal:
+        return SleepGoal(
+            target_value=8.0,
+            target_duration_minutes=480,
+            expected_sleep_start_time=datetime.strptime("23:30", "%H:%M"),
+            difficulty_level=1,
+        )
+
+    @staticmethod
+    def _default_developer_state() -> dict[str, Any]:
+        return {
+            "achievement": {
+                "unlocked_ids": [],
+                "locked_ids": [],
+            },
+            "map": {
+                "unlocked_node_ids": [],
+                "unlocked_count": None,
+                "total_count": 4,
+                "recommended_node": None,
+            },
+        }
+
+    @staticmethod
+    def _merge_state(target: dict[str, Any], source: dict[str, Any]) -> None:
+        for key, value in source.items():
+            if isinstance(target.get(key), dict) and isinstance(value, dict):
+                target[key].update(value)
+            else:
+                target[key] = value
+
+    @staticmethod
+    def _datetime_to_text(value: Any) -> str | None:
+        return value.isoformat() if isinstance(value, datetime) else value
+
+    @staticmethod
+    def _text_to_datetime(value: str | None) -> datetime | None:
+        return datetime.fromisoformat(value) if value else None
