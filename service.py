@@ -43,13 +43,14 @@ class MainTracker:
         report_builder: SleepReportBuilder | None = None,
     ) -> None:
         self.user_id = user_id
+        self.repository = record_repository
         self.sleep_manager = SleepManager(
             user_id=user_id,
             record_repository=record_repository,
             report_builder=report_builder,
         )
         self.achievement_manager = AchievementManager()
-        self.goal_manager = SleepGoalManager()
+        self.goal_manager = GoalManager(record_repository=record_repository)
         self.map_manager = SleepMapManager()
         self.user_manager = UserManager(user_id)
         self.current_view_state: State | None = None
@@ -240,29 +241,24 @@ class AchievementManager:
         return self._state.evaluate_new_achievements(record)
 
 
-class SleepGoalManager:
-    """Service for user sleep goals."""
+class GoalManager:
+    def __init__(self, record_repository: Any = None) -> None:
+        self.repository = record_repository
+        self._sleep_goal: SleepGoal | None = None
 
-    def __init__(self) -> None:
-        self.sleep_goal: SleepGoal
-    '''
-    def add_goal(self, goal: SleepGoal) -> None:
-        self.sleep_goals.append(goal)
+    @property
+    def sleep_goal(self) -> SleepGoal | None:
+        """
+        当外部访问 .sleep_goal 时，如果内存为空，自动触发通过 repository 捞取数据
+        """
+        if self._sleep_goal is None:
+            if self.repository:
+                self._sleep_goal = self.repository.load_current_goal()
+        return self._sleep_goal
 
-    def evaluate(self, record: SleepRecord) -> list[SleepGoal]:
-        completed: list[SleepGoal] = []
-        for goal in self.sleep_goals:
-            if goal in self.completed_goals:
-                continue
-            if goal.fulfilled_by(record):
-                completed.append(goal)
-        return completed
-
-    def update(self, completed: list[SleepGoal]) -> None:
-        for goal in completed:
-            if goal not in self.completed_goals:
-                self.completed_goals.append(goal)'''
-
+    @sleep_goal.setter
+    def sleep_goal(self, new_goal: SleepGoal) -> None:
+        self._sleep_goal = new_goal
 
 class SleepMapManager:
     """Service for sleep map unlock progress."""

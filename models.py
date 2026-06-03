@@ -64,6 +64,7 @@ class SleepRecord:
     user_id: str
     started_at: datetime
     ended_at: datetime
+    #注意这里的两个目标数据是指：这条睡眠记录产生的时候，用户当时的睡眠目标
     expected_duration_minutes: int | None
     expected_start_time: datetime 
     sleep_type: SleepType
@@ -82,8 +83,7 @@ class SleepReport:
 
 @dataclass(slots=True)
 class SleepGoal:
-    goal_id: str
-    goal_type: str
+    #删除了goal_id & goal_type
     target_value: float
     target_duration_minutes:int
     #注意此处添加了一个目标睡眠时长

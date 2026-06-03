@@ -8,9 +8,11 @@ fallback data where lower-level features are still being implemented.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime,time
+from datetime import datetime,timedelta
 from typing import Any
 from uuid import uuid4
+import pandas as pd
+import re
 
 from models import SleepEnvironment, SleepRecord, SleepType, SleepAchievement
 from service import MainTracker
@@ -30,13 +32,32 @@ class ServiceBridge:
     def __init__(self, tracker: MainTracker) -> None:
         self.tracker = tracker
         self._fallback_records: list[SleepRecord] = []
+        self.has_planned:bool=False
+        self.current_timetable_df: pd.DataFrame | None = None
 
     def get_home_snapshot(self) -> dict[str, Any]:
         snapshot = self._safe_call(self.tracker.get_ui_snapshot, default={})
+        is_sleeping = bool(snapshot.get("is_sleeping", False))
+        goal_hours = 8.0  
+        try:
+            goal = self.tracker.goal_manager.sleep_goal
+            if not goal:
+                goal = self.tracker.repository.load_current_goal()
+            if goal and hasattr(goal, 'target_duration_minutes'):
+                goal_hours = round(goal.target_duration_minutes / 60.0, 1)
+        except Exception as e:
+            print(f"动态获取睡眠目标失败，启用默认兜底值 (8.0h): {e}")
+
+        # 如果当前正在睡觉，显示“正在熟睡中”；如果没有，且已经生成了智能课表方案，可以显示“方案运行中”，否则显示“待记录/就绪”
+        if is_sleeping:
+            current_status = "正在熟睡中"
+        else:
+            current_status = "方案运行中" if getattr(self, "has_planned", False) else "就绪"
+
         return {
-            "is_sleeping": bool(snapshot.get("is_sleeping", False)),
-            "today_goal_hours": 7.5,
-            "current_status": "记录中" if snapshot.get("is_sleeping") else "待记录",
+            "is_sleeping": is_sleeping,
+            "today_goal_hours": goal_hours,           
+            "current_status": current_status,         
             "streak_days": self._estimate_streak_days(),
             "record_count": len(self.get_recent_records(9999)),
         }
@@ -120,19 +141,37 @@ class ServiceBridge:
             "score": min(100, avg_score),
         }
 
-    def get_goal_dashboard(self,days=7) -> dict[str, Any]:
+    def get_goal_dashboard(self) -> dict[str, Any]:
+        # 1. 优先从内存获取当前的睡眠目标
         goal = self.tracker.goal_manager.sleep_goal
-        if goal.target_duration_minutes: 
-            expected_duration=goal.target_duration_minutes 
+        
+        # 2. 如果内存为空（如冷启动），主动去本地存储中捞取当前目标
+        if not goal:
+            goal = self.tracker.storage_manager.load_current_goal()
+            self.tracker.goal_manager.sleep_goal = goal  
+
+        # 3.统一将目标时长转换为【小时数】进行后续的比对与展示
+        if goal and goal.target_duration_minutes: 
+            expected_hours = goal.target_duration_minutes / 60.0
         else:
-            expected_duration=8.0
-        records = self.get_recent_records(days)
-        done = sum(1 for record in records if self._duration_hours(record) >= expected_duration)
+            expected_hours = 8.0  
+            
+        # 4. 获取最近几天的睡眠记录（这里会自动使用 record 身体里当时自带的快照进行后续历史比对）
+        records = self.get_recent_records(7)
+        
+        # 5. 判定在这几天内，有多少天实际睡眠时间达到了【当时的目标小时数】
+        done = 0
+        if records:
+            for record in records:
+                if self._duration_hours(record) >= round(record.expected_duration_minutes/60, 1):
+                    done += 1
+        # 6. 计算达成率
+        rate = round((done / 7) * 100) 
         return {
-            "target_hours": expected_duration,
+            "target_hours": expected_hours, 
             "done_days": done,
-            "total_days": days,
-            "rate": round(done / days* 100),
+            "total_days": 7,
+            "rate": rate,
         }
 
     def get_achievement_dashboard(self) -> dict[str, Any]:
@@ -180,12 +219,167 @@ class ServiceBridge:
             "total_count": 4,
             "recommended_node": "图书馆" if unlocked >= 2 else "西门",
         }
+    
+    def upload_timetable(self, file_path: str) -> bool:
+        """
+        解析学校选课网导出的标准 Excel 课表（已支持旧版 .xls 并且强行剥离周六日）
+        """
+        try:
+            # 1. 自动根据后缀选择引擎读取 xls / xlsx
+            if file_path.endswith('.xls'):
+                df = pd.read_excel(file_path, sheet_name=0, engine='xlrd')
+            else:
+                df = pd.read_excel(file_path, sheet_name=0)
+            
+            # 2. 清洗列名，去掉前后空格
+            df.columns = [str(c).strip() for c in df.columns]
+            
+            # 清洗
+            rename_dict = {
+                "星期一": "周一", "星期二": "周二", "星期三": "周三", 
+                "星期四": "周四", "星期五": "周五", "星期六": "周六", "星期日": "周日"
+            }
+            df.rename(columns=rename_dict, inplace=True)
+            
+            # 4. 只保留周一 ~ 周五
+            keep_columns = ["节数", "周一", "周二", "周三", "周四", "周五"]
+            # 过滤出表格中实际存在的有效工作日列，防闪退
+            final_columns = [col for col in keep_columns if col in df.columns]
+            df = df[final_columns]
+            
+            self.current_timetable_df = df
+            self.has_planned = False  # 上传新课表，重置规划状态
+            return True
+            
+        except Exception as e:
+            print(f"解析课表 Excel 失败: {e}")
+            return False
 
-    def get_planning_dashboard(self) -> dict[str, Any]:
+    def _parse_cell_content(self, cell_value: Any) -> dict[str, str] | None:
+        """
+        专门处理两块内容间无空格、中英括号混杂的紧凑文本。
+        """
+        if pd.isna(cell_value) or str(cell_value).strip() == "":
+            return None
+            
+        raw_text = str(cell_value).strip()
+        
+        if '(' not in raw_text:
+            return None
+            
+        try:
+            # 1. 切出课程名称
+            course_name = raw_text.split('(', 1)[0].strip()
+            
+            # 2. 剥离并切出上课地点
+            right_part = raw_text.split('(', 1)[1]
+            
+            if ')(' in right_part:
+                location = right_part.split(')(', 1)[0].strip()
+            else:
+                location = right_part.split(')', 1)[0].strip()
+                
+            if not course_name:
+                return None
+                
+            return {
+                "name": course_name,
+                "location": location if location else "暂无上课教室数据"
+            }
+            
+        except Exception as e:
+            print(f"⚠️ 解析单元格时遇到异常跳过: {e}")
+            return None
+
+    def calculate_planning(self) -> dict[str, Any]:
+        """
+        智能规划算法
+        """
+        if self.current_timetable_df is None:
+            return {}
+
+        df = self.current_timetable_df
+        
+        # 1. 获取睡眠目标基准
+        goal = None
+        # 尝试通过 goal_manager 获取
+        if hasattr(self.tracker, 'goal_manager') and self.tracker.goal_manager:
+            goal = self.tracker.goal_manager.sleep_goal
+        # 如果 manager 里没有，且 repository 存在，尝试从仓库加载
+        if not goal and hasattr(self.tracker, 'repository') and self.tracker.repository:
+            try:
+                goal = self.tracker.repository.load_current_goal()
+            except Exception as e:
+                print(f"⚠️  从 repository 加载目标失败: {e}")
+        if goal:
+            target_hours = (goal.target_duration_minutes / 60.0)
+            expected_start = goal.expected_sleep_start_time
+        else:
+            target_hours = 8.0
+            expected_start = datetime.strptime("23:30", "%H:%M")
+
+        # 2. 工作日早八判定 (周一到周五第 0 行)
+        has_early_eight = False
+        work_days = ["周一", "周二", "周三", "周四", "周五"]
+        available_work_days = [day for day in work_days if day in df.columns]
+        
+        for day in available_work_days:
+            if len(df) > 0:
+                cell_data = df.at[0, day]
+                if self._parse_cell_content(cell_data):
+                    has_early_eight = True
+                    break
+
+        # 3. 规划夜间睡眠
+        if has_early_eight:
+            wake_time = datetime.strptime("07:00", "%H:%M")
+            sleep_time = wake_time - timedelta(hours=target_hours)
+        else:
+            sleep_time = expected_start
+            wake_time = sleep_time + timedelta(hours=target_hours)
+
+        night_sleep_str = f"{sleep_time.strftime('%H:%M')} - {wake_time.strftime('%H:%M')}"
+
+        # 4. 判定午休星期与上课地点收集（仅在周一到周五内闭环计算）
+        recommend_nap_days = []
+        unique_places = set()
+        
+        for day in available_work_days:
+            # 检查第 4 节（Index 3）和第 5 节（Index 4）
+            has_class_4 = self._parse_cell_content(df.at[3, day]) is not None if len(df) > 3 else False
+            has_class_5 = self._parse_cell_content(df.at[4, day]) is not None if len(df) > 4 else False
+            
+            if not has_class_4 and not has_class_5:
+                recommend_nap_days.append(day)
+            
+            # 遍历全天 12 节课，收集有效的上课地点
+            for row_idx in range(len(df)):
+                course = self._parse_cell_content(df.at[row_idx, day])
+                if course:
+                    loc = course["location"]
+                    if loc and "暂无" not in loc and "数据" not in loc and "II" not in loc:
+                        unique_places.add(loc)
+
+        # 5. 组装最终建议
+        nap_str = "/".join(recommend_nap_days) + " 13:00-13:30" if recommend_nap_days else "本周无合适午休空档"
+        places_str = "、".join(list(unique_places)) if unique_places else "宿舍"
+
+        self.has_planned = True
+
         return {
-            "night_sleep": "23:30-07:00",
-            "nap": "周二/周四 13:00-13:30",
-            "places": "宿舍、图书馆",
+            "night_sleep": night_sleep_str,
+            "nap": nap_str,
+            "places": places_str,
+        }
+    
+        
+    def get_planning_dashboard(self) -> dict[str, Any]:
+        if self.has_planned:
+            return self.calculate_planning()
+        return {
+            "night_sleep": "请点击一键规划获取建议",
+            "nap": "请点击一键规划获取建议",
+            "places": "--",
         }
 
     def _estimate_streak_days(self) -> int:

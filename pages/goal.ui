@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Form</class>
- <widget class="QWidget" name="Form">
+ <class>settingsRow_2</class>
+ <widget class="QWidget" name="settingsRow_2">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1052</width>
-    <height>720</height>
+    <width>940</width>
+    <height>640</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -23,12 +23,12 @@
    <string notr="true">#Form {
     background: #fffdf9;
     color: #25252a;
-    font-family: "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+    font-family: &quot;Microsoft YaHei UI&quot;, &quot;Microsoft YaHei&quot;, sans-serif;
 }
 
 QLabel {
     color: #28272c;
-    font-family: "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+    font-family: &quot;Microsoft YaHei UI&quot;, &quot;Microsoft YaHei&quot;, sans-serif;
 }
 
 #label {
@@ -298,7 +298,7 @@ QLabel {
     font-weight: 900;
 }</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1">
+  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0">
    <property name="spacing">
     <number>20</number>
    </property>
@@ -331,7 +331,7 @@ QLabel {
         <string>睡眠目标</string>
        </property>
        <property name="alignment">
-        <set>Qt::AlignmentFlag::AlignVCenter|Qt::AlignmentFlag::AlignLeft</set>
+        <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
        </property>
       </widget>
      </item>
@@ -376,72 +376,350 @@ QLabel {
    </item>
    <item>
     <layout class="QGridLayout" name="gridLayout">
-     <property name="horizontalSpacing">
+     <property name="spacing">
       <number>16</number>
      </property>
-     <property name="verticalSpacing">
-      <number>16</number>
-     </property>
+     <item row="0" column="1">
+      <widget class="QFrame" name="settingsFrame">
+       <property name="frameShape">
+        <enum>QFrame::Shape::NoFrame</enum>
+       </property>
+       <layout class="QVBoxLayout" name="settingsLayout">
+        <property name="spacing">
+         <number>10</number>
+        </property>
+        <property name="leftMargin">
+         <number>24</number>
+        </property>
+        <property name="topMargin">
+         <number>22</number>
+        </property>
+        <property name="rightMargin">
+         <number>24</number>
+        </property>
+        <property name="bottomMargin">
+         <number>16</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="cardTitle_2">
+          <property name="text">
+           <string>目标设置</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QFrame" name="settingRow">
+          <layout class="QHBoxLayout" name="settingRowLayout">
+           <property name="leftMargin">
+            <number>14</number>
+           </property>
+           <property name="rightMargin">
+            <number>14</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="settingIcon">
+             <property name="text">
+              <string>◴</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="settingName">
+             <property name="text">
+              <string>目标睡眠时长</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="settingSpacer">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QLabel" name="settingValue">
+             <property name="text">
+              <string>7.5 小时</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="durationBtn">
+             <property name="text">
+              <string>›</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QFrame" name="settingRow_2">
+          <layout class="QHBoxLayout" name="settingRowLayout_2">
+           <property name="leftMargin">
+            <number>14</number>
+           </property>
+           <property name="rightMargin">
+            <number>14</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="settingIcon_2">
+             <property name="text">
+              <string>☾</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="settingName_2">
+             <property name="text">
+              <string>目标入睡时间</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="settingSpacer_2">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QLabel" name="settingValue_2">
+             <property name="text">
+              <string>23:30</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="startTimeBtn">
+             <property name="text">
+              <string>›</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QFrame" name="settingRow_3">
+          <layout class="QHBoxLayout" name="settingRowLayout_3">
+           <property name="leftMargin">
+            <number>14</number>
+           </property>
+           <property name="rightMargin">
+            <number>14</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="settingIcon_3">
+             <property name="text">
+              <string>☼</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="settingName_3">
+             <property name="text">
+              <string>目标起床时间</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="settingSpacer_3">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QLabel" name="settingValue_3">
+             <property name="text">
+              <string>07:00</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="chevronLabel_3">
+             <property name="text">
+              <string>›</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QFrame" name="settingRow_4">
+          <layout class="QHBoxLayout" name="settingRowLayout_4">
+           <property name="leftMargin">
+            <number>14</number>
+           </property>
+           <property name="rightMargin">
+            <number>14</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="settingIcon_4">
+             <property name="text">
+              <string>☕</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="settingName_4">
+             <property name="text">
+              <string>午休目标</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="settingSpacer_4">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QLabel" name="toggleTrack">
+             <property name="text">
+              <string>30mins</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="saveButton">
+          <property name="text">
+           <string>保存设置</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
      <item row="0" column="0">
       <widget class="QFrame" name="currentGoalFrame">
        <property name="frameShape">
         <enum>QFrame::Shape::NoFrame</enum>
        </property>
        <layout class="QVBoxLayout" name="currentGoalLayout">
-        <property name="leftMargin"><number>24</number></property>
-        <property name="topMargin"><number>22</number></property>
-        <property name="rightMargin"><number>24</number></property>
-        <property name="bottomMargin"><number>22</number></property>
+        <property name="leftMargin">
+         <number>24</number>
+        </property>
+        <property name="topMargin">
+         <number>22</number>
+        </property>
+        <property name="rightMargin">
+         <number>24</number>
+        </property>
+        <property name="bottomMargin">
+         <number>22</number>
+        </property>
         <item>
          <widget class="QLabel" name="cardTitle">
-          <property name="text"><string>当前目标</string></property>
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>当前目标</string>
+          </property>
          </widget>
         </item>
         <item>
          <layout class="QHBoxLayout" name="currentGoalContent" stretch="1,0,1">
-          <property name="spacing"><number>24</number></property>
+          <property name="spacing">
+           <number>24</number>
+          </property>
           <item>
            <widget class="QLabel" name="targetIcon">
-            <property name="text"><string>◎</string></property>
-            <property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property>
+            <property name="text">
+             <string>◎</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item>
            <widget class="Line" name="line">
-            <property name="orientation"><enum>Qt::Orientation::Vertical</enum></property>
+            <property name="orientation">
+             <enum>Qt::Orientation::Vertical</enum>
+            </property>
            </widget>
           </item>
           <item>
            <layout class="QVBoxLayout" name="goalTextLayout">
-            <property name="spacing"><number>8</number></property>
+            <property name="spacing">
+             <number>8</number>
+            </property>
             <item>
              <widget class="QLabel" name="goalNameLabel">
-              <property name="text"><string>每日睡眠目标</string></property>
+              <property name="text">
+               <string>每日睡眠目标</string>
+              </property>
              </widget>
             </item>
             <item>
              <layout class="QHBoxLayout" name="goalValueLayout">
               <item>
                <widget class="QLabel" name="goalValueLabel">
-                <property name="text"><string>7.5</string></property>
+                <property name="text">
+                 <string>7.5</string>
+                </property>
                </widget>
               </item>
               <item>
                <widget class="QLabel" name="goalUnitLabel">
-                <property name="text"><string>小时</string></property>
-                <property name="alignment"><set>Qt::AlignmentFlag::AlignBottom|Qt::AlignmentFlag::AlignLeft</set></property>
+                <property name="text">
+                 <string>小时</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignmentFlag::AlignBottom|Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft</set>
+                </property>
                </widget>
               </item>
              </layout>
             </item>
             <item>
              <widget class="Line" name="line_2">
-              <property name="orientation"><enum>Qt::Orientation::Horizontal</enum></property>
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
              </widget>
             </item>
             <item>
              <widget class="QLabel" name="recommendLabel">
-              <property name="text"><string>☾  推荐作息  23:30 - 07:00</string></property>
+              <property name="text">
+               <string>☾  推荐作息  23:30 - 07:00</string>
+              </property>
              </widget>
             </item>
            </layout>
@@ -451,190 +729,231 @@ QLabel {
        </layout>
       </widget>
      </item>
-     <item row="0" column="1">
-      <widget class="QFrame" name="settingsFrame">
-       <property name="frameShape">
-        <enum>QFrame::Shape::NoFrame</enum>
-       </property>
-       <layout class="QVBoxLayout" name="settingsLayout">
-        <property name="spacing"><number>10</number></property>
-        <property name="leftMargin"><number>24</number></property>
-        <property name="topMargin"><number>22</number></property>
-        <property name="rightMargin"><number>24</number></property>
-        <property name="bottomMargin"><number>16</number></property>
-        <item><widget class="QLabel" name="cardTitle_2"><property name="text"><string>目标设置</string></property></widget></item>
-        <item>
-         <widget class="QFrame" name="settingRow">
-          <layout class="QHBoxLayout" name="settingRowLayout">
-           <property name="leftMargin"><number>14</number></property>
-           <property name="rightMargin"><number>14</number></property>
-           <item><widget class="QLabel" name="settingIcon"><property name="text"><string>◴</string></property></widget></item>
-           <item><widget class="QLabel" name="settingName"><property name="text"><string>目标睡眠时长</string></property></widget></item>
-           <item><spacer name="settingSpacer"><property name="orientation"><enum>Qt::Orientation::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>20</height></size></property></spacer></item>
-           <item><widget class="QLabel" name="settingValue"><property name="text"><string>7.5 小时</string></property></widget></item>
-           <item><widget class="QLabel" name="chevronLabel"><property name="text"><string>›</string></property></widget></item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QFrame" name="settingRow_2">
-          <layout class="QHBoxLayout" name="settingRowLayout_2">
-           <property name="leftMargin"><number>14</number></property>
-           <property name="rightMargin"><number>14</number></property>
-           <item><widget class="QLabel" name="settingIcon_2"><property name="text"><string>☾</string></property></widget></item>
-           <item><widget class="QLabel" name="settingName_2"><property name="text"><string>目标入睡时间</string></property></widget></item>
-           <item><spacer name="settingSpacer_2"><property name="orientation"><enum>Qt::Orientation::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>20</height></size></property></spacer></item>
-           <item><widget class="QLabel" name="settingValue_2"><property name="text"><string>23:30</string></property></widget></item>
-           <item><widget class="QLabel" name="chevronLabel_2"><property name="text"><string>›</string></property></widget></item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QFrame" name="settingRow_3">
-          <layout class="QHBoxLayout" name="settingRowLayout_3">
-           <property name="leftMargin"><number>14</number></property>
-           <property name="rightMargin"><number>14</number></property>
-           <item><widget class="QLabel" name="settingIcon_3"><property name="text"><string>☼</string></property></widget></item>
-           <item><widget class="QLabel" name="settingName_3"><property name="text"><string>目标起床时间</string></property></widget></item>
-           <item><spacer name="settingSpacer_3"><property name="orientation"><enum>Qt::Orientation::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>20</height></size></property></spacer></item>
-           <item><widget class="QLabel" name="settingValue_3"><property name="text"><string>07:00</string></property></widget></item>
-           <item><widget class="QLabel" name="chevronLabel_3"><property name="text"><string>›</string></property></widget></item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QFrame" name="settingRow_4">
-          <layout class="QHBoxLayout" name="settingRowLayout_4">
-           <property name="leftMargin"><number>14</number></property>
-           <property name="rightMargin"><number>14</number></property>
-           <item><widget class="QLabel" name="settingIcon_4"><property name="text"><string>☕</string></property></widget></item>
-           <item><widget class="QLabel" name="settingName_4"><property name="text"><string>午休目标</string></property></widget></item>
-           <item><spacer name="settingSpacer_4"><property name="orientation"><enum>Qt::Orientation::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>20</height></size></property></spacer></item>
-           <item><widget class="QLabel" name="toggleTrack"><property name="text"><string/></property></widget></item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="saveButton">
-          <property name="text"><string>保存设置</string></property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QFrame" name="goalListFrame">
-       <property name="frameShape"><enum>QFrame::Shape::NoFrame</enum></property>
-       <layout class="QVBoxLayout" name="goalListLayout">
-        <property name="spacing"><number>10</number></property>
-        <property name="leftMargin"><number>24</number></property>
-        <property name="topMargin"><number>22</number></property>
-        <property name="rightMargin"><number>24</number></property>
-        <property name="bottomMargin"><number>16</number></property>
-        <item><widget class="QLabel" name="cardTitle_3"><property name="text"><string>目标列表</string></property></widget></item>
-        <item>
-         <layout class="QGridLayout" name="tableHeaderLayout">
-          <item row="0" column="0"><widget class="QLabel" name="tableHeader"><property name="text"><string>目标名称</string></property></widget></item>
-          <item row="0" column="1"><widget class="QLabel" name="tableHeader_2"><property name="text"><string>目标时长</string></property></widget></item>
-          <item row="0" column="2"><widget class="QLabel" name="tableHeader_3"><property name="text"><string>推荐作息</string></property></widget></item>
-         </layout>
-        </item>
-        <item>
-         <widget class="QFrame" name="goalRow">
-          <layout class="QGridLayout" name="goalRowLayout">
-           <item row="0" column="0"><widget class="QLabel" name="goalIcon"><property name="text"><string>▣</string></property></widget></item>
-           <item row="0" column="1"><widget class="QLabel" name="goalRowName"><property name="text"><string>工作日目标</string></property></widget></item>
-           <item row="0" column="2"><widget class="QLabel" name="goalTime"><property name="text"><string>7.5 小时</string></property></widget></item>
-           <item row="0" column="3"><widget class="QLabel" name="goalRest"><property name="text"><string>23:30 - 07:00</string></property></widget></item>
-           <item row="0" column="4"><widget class="QLabel" name="moreLabel"><property name="text"><string>···</string></property></widget></item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QFrame" name="goalRow_2">
-          <layout class="QGridLayout" name="goalRowLayout_2">
-           <item row="0" column="0"><widget class="QLabel" name="goalIcon_2"><property name="text"><string>♧</string></property></widget></item>
-           <item row="0" column="1"><widget class="QLabel" name="goalRowName_2"><property name="text"><string>周末目标</string></property></widget></item>
-           <item row="0" column="2"><widget class="QLabel" name="goalTime_2"><property name="text"><string>8.0 小时</string></property></widget></item>
-           <item row="0" column="3"><widget class="QLabel" name="goalRest_2"><property name="text"><string>00:00 - 08:00</string></property></widget></item>
-           <item row="0" column="4"><widget class="QLabel" name="moreLabel_2"><property name="text"><string>···</string></property></widget></item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QFrame" name="goalRow_3">
-          <layout class="QGridLayout" name="goalRowLayout_3">
-           <item row="0" column="0"><widget class="QLabel" name="goalIcon_3"><property name="text"><string>▰</string></property></widget></item>
-           <item row="0" column="1"><widget class="QLabel" name="goalRowName_3"><property name="text"><string>考试周目标</string></property></widget></item>
-           <item row="0" column="2"><widget class="QLabel" name="goalTime_3"><property name="text"><string>7.0 小时</string></property></widget></item>
-           <item row="0" column="3"><widget class="QLabel" name="goalRest_3"><property name="text"><string>23:00 - 06:30</string></property></widget></item>
-           <item row="0" column="4"><widget class="QLabel" name="moreLabel_3"><property name="text"><string>···</string></property></widget></item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="newGoalButton">
-          <property name="text"><string>+  新建目标</string></property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QFrame" name="completionFrame">
-       <property name="frameShape"><enum>QFrame::Shape::NoFrame</enum></property>
-       <layout class="QVBoxLayout" name="completionLayout">
-        <property name="spacing"><number>18</number></property>
-        <property name="leftMargin"><number>24</number></property>
-        <property name="topMargin"><number>22</number></property>
-        <property name="rightMargin"><number>24</number></property>
-        <property name="bottomMargin"><number>22</number></property>
-        <item><widget class="QLabel" name="cardTitle_4"><property name="text"><string>完成情况</string></property></widget></item>
-        <item>
-         <layout class="QHBoxLayout" name="weekSummaryLayout">
-          <item><widget class="QLabel" name="weekText"><property name="text"><string>本周完成</string></property></widget></item>
-          <item><widget class="QLabel" name="weekTextStrong"><property name="text"><string>5 / 7 天</string></property></widget></item>
-          <item><spacer name="weekSpacer"><property name="orientation"><enum>Qt::Orientation::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property></spacer></item>
-         </layout>
-        </item>
-        <item>
-         <layout class="QGridLayout" name="daysLayout">
-          <property name="horizontalSpacing"><number>20</number></property>
-          <item row="0" column="0"><widget class="QLabel" name="dayLabel"><property name="text"><string>周一</string></property><property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property></widget></item>
-          <item row="0" column="1"><widget class="QLabel" name="dayLabel_2"><property name="text"><string>周二</string></property><property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property></widget></item>
-          <item row="0" column="2"><widget class="QLabel" name="dayLabel_3"><property name="text"><string>周三</string></property><property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property></widget></item>
-          <item row="0" column="3"><widget class="QLabel" name="dayLabel_4"><property name="text"><string>周四</string></property><property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property></widget></item>
-          <item row="0" column="4"><widget class="QLabel" name="dayLabel_5"><property name="text"><string>周五</string></property><property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property></widget></item>
-          <item row="0" column="5"><widget class="QLabel" name="dayLabel_6"><property name="text"><string>周六</string></property><property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property></widget></item>
-          <item row="0" column="6"><widget class="QLabel" name="dayLabel_7"><property name="text"><string>周日</string></property><property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property></widget></item>
-          <item row="1" column="0"><widget class="QLabel" name="doneDot"><property name="text"><string>✓</string></property><property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property></widget></item>
-          <item row="1" column="1"><widget class="QLabel" name="doneDot_2"><property name="text"><string>✓</string></property><property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property></widget></item>
-          <item row="1" column="2"><widget class="QLabel" name="doneDot_3"><property name="text"><string>✓</string></property><property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property></widget></item>
-          <item row="1" column="3"><widget class="QLabel" name="doneDot_4"><property name="text"><string>✓</string></property><property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property></widget></item>
-          <item row="1" column="4"><widget class="QLabel" name="doneDot_5"><property name="text"><string>✓</string></property><property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property></widget></item>
-          <item row="1" column="5"><widget class="QLabel" name="emptyDot"><property name="text"><string/></property></widget></item>
-          <item row="1" column="6"><widget class="QLabel" name="emptyDot_2"><property name="text"><string/></property></widget></item>
-         </layout>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="progressLayout">
-          <item>
-           <widget class="QProgressBar" name="progressBar">
-            <property name="value"><number>71</number></property>
-            <property name="textVisible"><bool>false</bool></property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="percentLabel">
-            <property name="text"><string>71%</string></property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-       </layout>
-      </widget>
-     </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QFrame" name="completionFrame">
+     <property name="frameShape">
+      <enum>QFrame::Shape::NoFrame</enum>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <property name="spacing">
+       <number>18</number>
+      </property>
+      <property name="leftMargin">
+       <number>24</number>
+      </property>
+      <property name="topMargin">
+       <number>22</number>
+      </property>
+      <property name="rightMargin">
+       <number>24</number>
+      </property>
+      <property name="bottomMargin">
+       <number>22</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="cardTitle_4">
+        <property name="text">
+         <string>完成情况</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="progressLayout">
+        <item>
+         <widget class="QProgressBar" name="progressBar">
+          <property name="value">
+           <number>71</number>
+          </property>
+          <property name="textVisible">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="percentLabel">
+          <property name="text">
+           <string>71%</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QGridLayout" name="daysLayout">
+        <property name="horizontalSpacing">
+         <number>20</number>
+        </property>
+        <item row="0" column="0">
+         <widget class="QLabel" name="dayLabel">
+          <property name="text">
+           <string>周一</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLabel" name="dayLabel_2">
+          <property name="text">
+           <string>周二</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QLabel" name="dayLabel_3">
+          <property name="text">
+           <string>周三</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="3">
+         <widget class="QLabel" name="dayLabel_4">
+          <property name="text">
+           <string>周四</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="4">
+         <widget class="QLabel" name="dayLabel_5">
+          <property name="text">
+           <string>周五</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="5">
+         <widget class="QLabel" name="dayLabel_6">
+          <property name="text">
+           <string>周六</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="6">
+         <widget class="QLabel" name="dayLabel_7">
+          <property name="text">
+           <string>周日</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="doneDot">
+          <property name="text">
+           <string>✓</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLabel" name="doneDot_2">
+          <property name="text">
+           <string>✓</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="QLabel" name="doneDot_3">
+          <property name="text">
+           <string>✓</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="3">
+         <widget class="QLabel" name="doneDot_4">
+          <property name="text">
+           <string>✓</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="4">
+         <widget class="QLabel" name="doneDot_5">
+          <property name="text">
+           <string>✓</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="5">
+         <widget class="QLabel" name="emptyDot">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="6">
+         <widget class="QLabel" name="emptyDot_2">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="weekSummaryLayout">
+        <item>
+         <widget class="QLabel" name="weekText">
+          <property name="text">
+           <string>本周完成</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="weekTextStrong">
+          <property name="text">
+           <string>5 / 7 天</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="weekSpacer">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
    </item>
   </layout>
  </widget>

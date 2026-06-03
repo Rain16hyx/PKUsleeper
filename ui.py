@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QButtonGroup
 from PySide6.QtCore import Qt
 from models import SleepType, SleepEnvironment
+import pyqtgraph as pg
 
 class SleepConfigDialog(QDialog):
     """自定义睡眠配置弹窗：按键单选 + 动态校验亮起"""
@@ -84,3 +85,19 @@ class SleepConfigDialog(QDialog):
         sleep_type = SleepType.NIGHT if self.btn_night.isChecked() else SleepType.NAP
         environment = SleepEnvironment.DORMITORY if self.btn_dorm.isChecked() else SleepEnvironment.HOME
         return sleep_type, environment
+
+#时间轴刻度
+class TimeAxisItem(pg.AxisItem):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def tickStrings(self, values, scale, spacing):
+        strings = []
+        for v in values:
+            val = int(v) % 1440
+            if val < 0:
+                val += 1440
+            hours = val // 60
+            minutes = val % 60
+            strings.append(f"{hours:02d}:{minutes:02d}")
+        return strings

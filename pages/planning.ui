@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1131</width>
-    <height>750</height>
+    <width>958</width>
+    <height>699</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -407,7 +407,7 @@ QLabel {
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="4,1">
+    <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="4,0">
      <property name="spacing">
       <number>16</number>
      </property>
@@ -432,46 +432,6 @@ QLabel {
         <property name="spacing">
          <number>7</number>
         </property>
-        <item row="0" column="1">
-         <widget class="QLabel" name="dayLabel">
-          <property name="text">
-           <string>周一</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="2">
-         <widget class="QLabel" name="dayLabel_2">
-          <property name="text">
-           <string>周二</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="3">
-         <widget class="QLabel" name="dayLabel_3">
-          <property name="text">
-           <string>周三</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="4">
-         <widget class="QLabel" name="dayLabel_4">
-          <property name="text">
-           <string>周四</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
         <item row="0" column="5">
          <widget class="QLabel" name="dayLabel_5">
           <property name="text">
@@ -482,40 +442,10 @@ QLabel {
           </property>
          </widget>
         </item>
-        <item row="0" column="6">
-         <widget class="QLabel" name="dayLabel_6">
+        <item row="5" column="0">
+         <widget class="QLabel" name="timeLabel_5">
           <property name="text">
-           <string>周六</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="7">
-         <widget class="QLabel" name="dayLabel_7">
-          <property name="text">
-           <string>周日</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="timeLabel">
-          <property name="text">
-           <string>08:00</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="timeLabel_2">
-          <property name="text">
-           <string>10:00</string>
+           <string>16:00</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -532,20 +462,20 @@ QLabel {
           </property>
          </widget>
         </item>
-        <item row="4" column="0">
-         <widget class="QLabel" name="timeLabel_4">
+        <item row="0" column="2">
+         <widget class="QLabel" name="dayLabel_2">
           <property name="text">
-           <string>14:00</string>
+           <string>周二</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignCenter</set>
           </property>
          </widget>
         </item>
-        <item row="5" column="0">
-         <widget class="QLabel" name="timeLabel_5">
+        <item row="4" column="0">
+         <widget class="QLabel" name="timeLabel_4">
           <property name="text">
-           <string>16:00</string>
+           <string>14:00</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -572,354 +502,50 @@ QLabel {
           </property>
          </widget>
         </item>
-        <item row="1" column="1">
-         <widget class="QLabel" name="courseCell">
-          <property name="minimumSize">
-           <size>
-            <width>86</width>
-            <height>66</height>
-           </size>
-          </property>
+        <item row="0" column="3">
+         <widget class="QLabel" name="dayLabel_3">
           <property name="text">
-           <string>高等数学
-08:00-10:00</string>
+           <string>周三</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignCenter</set>
           </property>
          </widget>
         </item>
-        <item row="2" column="1">
-         <widget class="QLabel" name="courseCell_2">
+        <item row="0" column="4">
+         <widget class="QLabel" name="dayLabel_4">
           <property name="text">
-           <string>程序设计
-10:10-12:00</string>
+           <string>周四</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignCenter</set>
           </property>
          </widget>
         </item>
-        <item row="4" column="1">
-         <widget class="QLabel" name="courseCell_3">
+        <item row="2" column="0">
+         <widget class="QLabel" name="timeLabel_2">
           <property name="text">
-           <string>线性代数
-14:00-16:00</string>
+           <string>10:00</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignCenter</set>
           </property>
          </widget>
         </item>
-        <item row="6" column="1">
-         <widget class="QLabel" name="sleepCell">
+        <item row="0" column="1">
+         <widget class="QLabel" name="dayLabel">
           <property name="text">
-           <string>☾ 小憩 1h｜宿舍
-17:00-18:00</string>
+           <string>周一</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignCenter</set>
           </property>
          </widget>
         </item>
-        <item row="7" column="1">
-         <widget class="QLabel" name="sleepCell_2">
+        <item row="1" column="0">
+         <widget class="QLabel" name="timeLabel">
           <property name="text">
-           <string>☾ 睡眠 7.5h｜宿舍
-21:30-05:00+1</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="2">
-         <widget class="QLabel" name="courseCell_4">
-          <property name="text">
-           <string>大学英语
-08:00-10:00</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="2">
-         <widget class="QLabel" name="courseCell_5">
-          <property name="text">
-           <string>思政课
-10:10-12:00</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="2">
-         <widget class="QLabel" name="sleepCell_3">
-          <property name="text">
-           <string>☾ 午休 0.5h｜图书馆
-13:00-13:30</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="2">
-         <widget class="QLabel" name="courseCell_6">
-          <property name="text">
-           <string>程序设计
-14:00-16:00</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="7" column="2">
-         <widget class="QLabel" name="sleepCell_4">
-          <property name="text">
-           <string>☾ 睡眠 7.5h｜宿舍
-21:30-05:00+1</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="3">
-         <widget class="QLabel" name="sleepCell_5">
-          <property name="text">
-           <string>☾ 小憩 1h｜宿舍
-08:00-09:00</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="3">
-         <widget class="QLabel" name="courseCell_7">
-          <property name="text">
-           <string>线性代数
-09:10-11:00</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="3">
-         <widget class="QLabel" name="courseCell_8">
-          <property name="text">
-           <string>思政课
-14:00-16:00</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="3">
-         <widget class="QLabel" name="sleepCell_6">
-          <property name="text">
-           <string>☾ 小憩 1h｜宿舍
-17:00-18:00</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="7" column="3">
-         <widget class="QLabel" name="sleepCell_7">
-          <property name="text">
-           <string>☾ 睡眠 7.5h｜宿舍
-21:30-05:00+1</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="4">
-         <widget class="QLabel" name="courseCell_9">
-          <property name="text">
-           <string>高等数学
-08:00-10:00</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="4">
-         <widget class="QLabel" name="courseCell_10">
-          <property name="text">
-           <string>程序设计
-10:10-12:00</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="4">
-         <widget class="QLabel" name="sleepCell_8">
-          <property name="text">
-           <string>☾ 午休 0.5h｜图书馆
-13:00-13:30</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="4">
-         <widget class="QLabel" name="courseCell_11">
-          <property name="text">
-           <string>实验课
-14:00-16:00</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="7" column="4">
-         <widget class="QLabel" name="sleepCell_9">
-          <property name="text">
-           <string>☾ 睡眠 7.5h｜宿舍
-21:30-05:00+1</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="5">
-         <widget class="QLabel" name="courseCell_12">
-          <property name="text">
-           <string>大学英语
-08:00-10:00</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="5">
-         <widget class="QLabel" name="courseCell_13">
-          <property name="text">
-           <string>线性代数
-10:10-12:00</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="5">
-         <widget class="QLabel" name="courseCell_14">
-          <property name="text">
-           <string>思政课
-14:00-16:00</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="7" column="5">
-         <widget class="QLabel" name="sleepCell_10">
-          <property name="text">
-           <string>☾ 睡眠 7.5h｜宿舍
-21:30-05:00+1</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="6">
-         <widget class="QLabel" name="sleepCell_11">
-          <property name="text">
-           <string>☾ 补觉 2h｜宿舍
-10:00-12:00</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="6">
-         <widget class="QLabel" name="courseCell_15">
-          <property name="text">
-           <string>自习
-15:00-17:00</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="6">
-         <widget class="QLabel" name="sleepCell_12">
-          <property name="text">
-           <string>☾ 小憩 1h｜宿舍
-19:00-20:00</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="7" column="6">
-         <widget class="QLabel" name="sleepCell_13">
-          <property name="text">
-           <string>☾ 睡眠 7.5h｜宿舍
-21:30-05:00+1</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="7">
-         <widget class="QLabel" name="emptyCell">
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="7">
-         <widget class="QLabel" name="sleepCell_14">
-          <property name="text">
-           <string>☾ 补觉 2h｜宿舍
-09:00-11:00</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="7">
-         <widget class="QLabel" name="sleepCell_15">
-          <property name="text">
-           <string>☾ 小憩 1h｜宿舍
-14:00-15:00</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="7" column="7">
-         <widget class="QLabel" name="sleepCell_16">
-          <property name="text">
-           <string>☾ 睡眠 7.5h｜宿舍
-21:30-05:00+1</string>
+           <string>08:00</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -936,6 +562,12 @@ QLabel {
        </property>
        <item>
         <widget class="QFrame" name="frame_3">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>5</verstretch>
+          </sizepolicy>
+         </property>
          <property name="frameShape">
           <enum>QFrame::Shape::NoFrame</enum>
          </property>
@@ -985,85 +617,6 @@ QLabel {
     宿舍、图书馆</string>
             </property>
            </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QFrame" name="legendFrame">
-         <property name="frameShape">
-          <enum>QFrame::Shape::NoFrame</enum>
-         </property>
-         <layout class="QVBoxLayout" name="legendLayout">
-          <property name="spacing">
-           <number>14</number>
-          </property>
-          <property name="leftMargin">
-           <number>18</number>
-          </property>
-          <property name="topMargin">
-           <number>18</number>
-          </property>
-          <property name="rightMargin">
-           <number>18</number>
-          </property>
-          <property name="bottomMargin">
-           <number>18</number>
-          </property>
-          <item>
-           <widget class="QLabel" name="legendTitle">
-            <property name="text">
-             <string>图例</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="legendCourseLayout">
-            <item>
-             <widget class="QLabel" name="legendCourse">
-              <property name="maximumSize">
-               <size>
-                <width>60</width>
-                <height>16777215</height>
-               </size>
-              </property>
-              <property name="text">
-               <string/>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="legendText">
-              <property name="text">
-               <string>课程（用户填写）</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="legendSleepLayout">
-            <item>
-             <widget class="QLabel" name="legendSleep">
-              <property name="maximumSize">
-               <size>
-                <width>60</width>
-                <height>16777215</height>
-               </size>
-              </property>
-              <property name="text">
-               <string/>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="legendText_2">
-              <property name="text">
-               <string>睡眠建议（系统生成）</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
           </item>
          </layout>
         </widget>

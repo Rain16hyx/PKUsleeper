@@ -16,6 +16,7 @@ class SleepRecordRepository:
         self.user_id = user_id
         self.data_dir = Path(data_dir)/user_id
         self.data_dir.mkdir(parents=True, exist_ok=True)
+        self.goal_file_path = self.data_dir / "sleep_goal.json"
 
     def get_file_path(self, record_id: str) -> Path:
         """根据睡眠记录ID获取对应的数据文件路径"""
@@ -100,3 +101,62 @@ class SleepRecordRepository:
         file_path = self.get_file_path(record_id)
         if file_path.exists():
             file_path.unlink() 
+    
+    def load_current_goal(self) -> SleepGoal:
+        """
+        从用户专属文件夹下的 sleep_goal.json 中读取当前的睡眠目标。
+        如果文件不存在（新用户冷启动），返回安全的默认目标，确保程序不闪退。
+        """
+        if not self.goal_file_path.exists():
+            default_time = datetime.strptime("23:30", "%H:%M")
+            return SleepGoal(
+                target_value=8.0,
+                target_duration_minutes=480,
+                expected_sleep_start_time=default_time,
+                difficulty_level=1
+            )
+        
+        try:
+            with open(self.goal_file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                
+            # 将 JSON 中的时间字符串还原为 Python 的 datetime 对象
+            start_time_obj = None
+            if data.get("expected_sleep_start_time"):
+                start_time_obj = datetime.strptime(data["expected_sleep_start_time"], "%H:%M")
+            
+            return SleepGoal(
+                target_value=data.get("target_value", 8.0),
+                target_duration_minutes=data.get("target_duration_minutes", 480),
+                expected_sleep_start_time=start_time_obj,
+                difficulty_level=data.get("difficulty_level", 1)
+            )
+        except Exception as e:
+            print(f"用户 {self.user_id} 读取当前睡眠目标失败，降级使用默认值: {e}")
+            # 异常隔离：文件损坏或格式不对时同样返回默认值，防止主程序崩溃
+            return SleepGoal(goal_id=f"global_core_goal_{self.user_id}", target_duration_minutes=480)
+
+    def save_current_goal(self, goal: SleepGoal) -> None:
+        """
+        将用户最新修改的当前睡眠目标持久化写入到本地 sleep_goal.json 文件。
+        """
+        if not goal:
+            return
+            
+        # 序列化清洗：把 datetime 对象转换成 JSON 可读的字符串 "HH:MM"
+        start_time_str = ""
+        if goal.expected_sleep_start_time:
+            start_time_str = goal.expected_sleep_start_time.strftime("%H:%M")
+
+        payload = {
+            "target_value": goal.target_value,
+            "target_duration_minutes": goal.target_duration_minutes,
+            "expected_sleep_start_time": start_time_str,
+            "difficulty_level": goal.difficulty_level
+        }
+        
+        try:
+            with open(self.goal_file_path, "w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False, indent=4)
+        except Exception as e:
+            print(f"用户 {self.user_id} 持久化当前睡眠目标失败: {e}")
