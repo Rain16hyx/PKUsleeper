@@ -36,7 +36,7 @@
 
 #appTitle {
     color: #ffffff;
-    font-family: "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+    font-family: &quot;Microsoft YaHei UI&quot;, &quot;Microsoft YaHei&quot;, sans-serif;
     font-size: 25px;
     font-weight: 700;
     letter-spacing: 1px;
@@ -44,7 +44,7 @@
 
 #appMark {
     color: #f6d08c;
-    font-family: "Segoe UI Symbol", "Microsoft YaHei UI";
+    font-family: &quot;Segoe UI Symbol&quot;, &quot;Microsoft YaHei UI&quot;;
     font-size: 34px;
     font-weight: 700;
 }
@@ -56,7 +56,7 @@
     border-radius: 11px;
     color: #fff8ee;
     background: transparent;
-    font-family: "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+    font-family: &quot;Microsoft YaHei UI&quot;, &quot;Microsoft YaHei&quot;, sans-serif;
     font-size: 17px;
     font-weight: 600;
     text-align: left;
@@ -73,7 +73,7 @@
 
 #sidebarFooter {
     color: rgba(255, 230, 196, 0.46);
-    font-family: "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+    font-family: &quot;Microsoft YaHei UI&quot;, &quot;Microsoft YaHei&quot;, sans-serif;
     font-size: 13px;
 }
 
@@ -136,7 +136,7 @@
         <number>24</number>
        </property>
        <item>
-        <layout class="QHBoxLayout" name="brandLayout">
+        <layout class="QHBoxLayout" name="brandLayout" stretch="1,5">
          <property name="spacing">
           <number>10</number>
          </property>
@@ -162,7 +162,7 @@
             <string>睡眠助手</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignmentFlag::AlignVCenter|Qt::AlignmentFlag::AlignLeft</set>
+            <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
           </widget>
          </item>
@@ -192,14 +192,14 @@
            <height>48</height>
           </size>
          </property>
+         <property name="text">
+          <string>    ⌂   首页</string>
+         </property>
          <property name="checkable">
           <bool>true</bool>
          </property>
          <property name="checked">
           <bool>true</bool>
-         </property>
-         <property name="text">
-          <string>⌂   首页</string>
          </property>
         </widget>
        </item>
@@ -211,11 +211,11 @@
            <height>48</height>
           </size>
          </property>
+         <property name="text">
+          <string>    睡眠记录</string>
+         </property>
          <property name="checkable">
           <bool>true</bool>
-         </property>
-         <property name="text">
-          <string>☾   睡眠记录</string>
          </property>
         </widget>
        </item>
@@ -227,11 +227,11 @@
            <height>48</height>
           </size>
          </property>
+         <property name="text">
+          <string>    睡眠报告</string>
+         </property>
          <property name="checkable">
           <bool>true</bool>
-         </property>
-         <property name="text">
-          <string>▤   睡眠报告</string>
          </property>
         </widget>
        </item>
@@ -243,11 +243,11 @@
            <height>48</height>
           </size>
          </property>
+         <property name="text">
+          <string>    智能规划</string>
+         </property>
          <property name="checkable">
           <bool>true</bool>
-         </property>
-         <property name="text">
-          <string>✓   智能规划</string>
          </property>
         </widget>
        </item>
@@ -259,11 +259,11 @@
            <height>48</height>
           </size>
          </property>
+         <property name="text">
+          <string>    打卡地图</string>
+         </property>
          <property name="checkable">
           <bool>true</bool>
-         </property>
-         <property name="text">
-          <string>⌖   打卡地图</string>
          </property>
         </widget>
        </item>
@@ -275,11 +275,11 @@
            <height>48</height>
           </size>
          </property>
+         <property name="text">
+          <string>    睡眠目标</string>
+         </property>
          <property name="checkable">
           <bool>true</bool>
-         </property>
-         <property name="text">
-          <string>◎   睡眠目标</string>
          </property>
         </widget>
        </item>
@@ -291,11 +291,11 @@
            <height>48</height>
           </size>
          </property>
+         <property name="text">
+          <string>    睡眠成就</string>
+         </property>
          <property name="checkable">
           <bool>true</bool>
-         </property>
-         <property name="text">
-          <string>♕   睡眠成就</string>
          </property>
         </widget>
        </item>
@@ -307,11 +307,11 @@
            <height>48</height>
           </size>
          </property>
+         <property name="text">
+          <string>    ♙   我的</string>
+         </property>
          <property name="checkable">
           <bool>true</bool>
-         </property>
-         <property name="text">
-          <string>♙   我的</string>
          </property>
         </widget>
        </item>

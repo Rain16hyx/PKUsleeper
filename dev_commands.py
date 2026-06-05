@@ -17,17 +17,10 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from achievement_catalog import DEFAULT_ACHIEVEMENT_NAMES
 from models import SleepEnvironment, SleepGoal, SleepRecord, SleepType
 from storage import SleepRecordRepository
 from utils.data_processing import SleepReportBuilder
-
-
-KNOWN_ACHIEVEMENTS = {
-    "first_sleep": "初入梦乡",
-    "sleep_8h": "睡眠达人",
-    "early_sleep": "早睡早起",
-    "nap_master": "午休大师",
-}
 
 
 def main() -> int:
@@ -264,7 +257,7 @@ def cmd_achievement_list(repo: SleepRecordRepository, args: argparse.Namespace) 
     state = repo.load_developer_state()["achievement"]
     unlocked = set(state["unlocked_ids"])
     locked = set(state["locked_ids"])
-    for achievement_id, name in KNOWN_ACHIEVEMENTS.items():
+    for achievement_id, name in DEFAULT_ACHIEVEMENT_NAMES.items():
         if achievement_id in locked:
             status = "手动锁定"
         elif achievement_id in unlocked:

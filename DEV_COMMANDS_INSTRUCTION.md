@@ -47,6 +47,26 @@ C:\Users\hyx20\miniconda3\envs\pkusleeper\python.exe dev_commands.py map unlock-
 C:\Users\hyx20\miniconda3\envs\pkusleeper\python.exe dev_commands.py map clear
 ```
 
+当前可用成就 ID：
+
+```text
+first_sleep       初入梦乡
+sleep_8h          睡眠达人
+early_sleep       早睡早起
+nap_master        午休大师
+deep_recovery     深度回血
+power_nap         高效小憩
+quiet_night       一夜安稳
+dorm_regular      宿舍作息家
+home_recharge     回家充电
+three_checkins    小有坚持
+nap_habit         午休养成
+goal_five         目标收割机
+streak_three      三日连胜
+week_logger       一周有迹
+steady_week       稳定作息周
+```
+
 成就和地图的手动状态保存在 `data/<user_id>/dev_state.json`。清除全部手动覆盖：
 
 ```powershell

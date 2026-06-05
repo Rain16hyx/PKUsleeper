@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>940</width>
-    <height>640</height>
+    <width>1049</width>
+    <height>734</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -627,7 +627,7 @@ QLabel {
        <property name="frameShape">
         <enum>QFrame::Shape::NoFrame</enum>
        </property>
-       <layout class="QVBoxLayout" name="currentGoalLayout">
+       <layout class="QVBoxLayout" name="currentGoalLayout" stretch="1,4">
         <property name="leftMargin">
          <number>24</number>
         </property>
@@ -654,7 +654,7 @@ QLabel {
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="currentGoalContent" stretch="1,0,1">
+         <layout class="QHBoxLayout" name="currentGoalContent" stretch="1,0,3">
           <property name="spacing">
            <number>24</number>
           </property>
@@ -688,7 +688,7 @@ QLabel {
              </widget>
             </item>
             <item>
-             <layout class="QHBoxLayout" name="goalValueLayout">
+             <layout class="QHBoxLayout" name="goalValueLayout" stretch="0,0">
               <item>
                <widget class="QLabel" name="goalValueLabel">
                 <property name="text">

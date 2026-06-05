@@ -322,7 +322,7 @@ class AnalysisController(UiController):
         today = datetime.now().date()
         date_list = [today - timedelta(days=i) for i in range(6, -1, -1)]
         x_ticks = [(i, d.strftime("%m/%d")) for i, d in enumerate(date_list)]
-        record_dict = {r.started_at.date(): r for r in records}
+        record_dict = {self.bridge.record_date(r): r for r in records}
 
         durations: list[float] = []
         sleep_times: list[int] = []
@@ -385,7 +385,7 @@ class AnalysisController(UiController):
         today = datetime.now().date()
         date_list = [today - timedelta(days=i) for i in range(29, -1, -1)]
         x_ticks = [(i, d.strftime("%m/%d") if i % 5 == 0 else "") for i, d in enumerate(date_list)]
-        record_dict = {r.started_at.date(): r for r in records}
+        record_dict = {self.bridge.record_date(r): r for r in records}
 
         durations = [0.0] * 30
         for idx, day in enumerate(date_list):
@@ -490,7 +490,8 @@ class PlanningController(UiController):
         self.connect_button("pushButton", self._on_upload_timetable)
         self.connect_button("pushButton_2", self._on_trigger_plan)
         self._style_result_labels()
-        self._init_blank_timetable()
+        self.bridge.ensure_timetable()
+        self._render_timetable_preview()
 
     def refresh(self) -> None:
         data = self.bridge.get_planning_dashboard()
@@ -517,10 +518,7 @@ class PlanningController(UiController):
             QMessageBox.warning(self.page, "错误", "课表解析失败，请检查 Excel 格式。")
 
     def _on_trigger_plan(self) -> None:
-        if self.bridge.current_timetable_df is None:
-            QMessageBox.warning(self.page, "提示", "请先上传课表文件。")
-            return
-
+        self.bridge.ensure_timetable()
         self.bridge.has_planned = True
         self.refresh()
         QMessageBox.information(self.page, "规划成功", "已根据课表和睡眠目标生成作息方案。")
@@ -539,33 +537,8 @@ class PlanningController(UiController):
             if widget is not None:
                 widget.deleteLater()
 
-        weekdays = ["周一", "周二", "周三", "周四", "周五"]
-        for col_idx, day_text in enumerate(weekdays, start=1):
-            label = QLabel(day_text)
-            label.setAlignment(Qt.AlignCenter)
-            label.setStyleSheet("font-size: 13px; font-weight: bold; color: #26252a; padding: 4px;")
-            grid_layout.addWidget(label, 0, col_idx)
-
-        for row_idx in range(1, 13):
-            time_label = QLabel(f"第 {row_idx} 节")
-            time_label.setAlignment(Qt.AlignCenter)
-            time_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #555555; padding-right: 6px;")
-            grid_layout.addWidget(time_label, row_idx, 0)
-
-            for col_idx in range(1, 6):
-                empty_box = QLabel("")
-                empty_box.setStyleSheet(
-                    """
-                    border: 1px dashed #eee2d8;
-                    background: #fffdfa;
-                    border-radius: 5px;
-                    min-height: 42px;
-                    """
-                )
-                grid_layout.addWidget(empty_box, row_idx, col_idx)
-
     def _render_timetable_preview(self) -> None:
-        df = self.bridge.current_timetable_df
+        df = self.bridge.ensure_timetable()
         grid_layout = self._get_grid_layout()
         if df is None or grid_layout is None:
             return
@@ -573,36 +546,90 @@ class PlanningController(UiController):
         self._init_blank_timetable()
         work_days = ["周一", "周二", "周三", "周四", "周五"]
 
-        for col_idx, day_name in enumerate(work_days, start=1):
-            if day_name not in df.columns:
-                continue
+        for col_idx, day_text in enumerate(work_days, start=1):
+            label = QLabel(day_text)
+            label.setAlignment(Qt.AlignCenter)
+            label.setStyleSheet("font-size: 13px; font-weight: bold; color: #26252a; padding: 4px;")
+            grid_layout.addWidget(label, 0, col_idx)
 
+        for col_idx, day_name in enumerate(work_days, start=1):
             for row_idx in range(1, 13):
                 df_row_index = row_idx - 1
-                if df_row_index >= len(df):
-                    break
+                if col_idx == 1:
+                    time_label = QLabel(f"第 {row_idx} 节")
+                    time_label.setAlignment(Qt.AlignCenter)
+                    time_label.setStyleSheet(
+                        "font-size: 12px; font-weight: bold; color: #555555; padding-right: 6px;"
+                    )
+                    grid_layout.addWidget(time_label, row_idx, 0)
 
-                cell_value = df.iloc[df_row_index][day_name]
-                course_info = self.bridge._parse_cell_content(cell_value)
-                if course_info is None:
-                    continue
+                cell_value = str(df.at[df_row_index, day_name]).strip()
+                course_cell = self._create_timetable_cell(df_row_index, day_name, cell_value)
+                grid_layout.addWidget(course_cell, row_idx, col_idx)
 
-                card_text = f"{course_info['name']}\n@{course_info['location']}"
-                course_card = QLabel(card_text)
-                course_card.setAlignment(Qt.AlignCenter)
-                course_card.setWordWrap(True)
-                course_card.setStyleSheet(
-                    """
-                    border: 1px solid #f0d9c8;
-                    border-radius: 6px;
-                    background: #fff0e7;
-                    color: #29282c;
-                    font-size: 11px;
-                    font-weight: 600;
-                    padding: 4px;
-                    """
-                )
-                grid_layout.addWidget(course_card, row_idx, col_idx)
+    def _create_timetable_cell(self, row_index: int, day_name: str, cell_value: str) -> QLabel:
+        course_info = self.bridge._parse_cell_content(cell_value)
+        if course_info:
+            cell_text = f"{course_info['name']}\n@{course_info['location']}"
+            style = """
+                border: 1px solid #f0d9c8;
+                border-radius: 6px;
+                background: #fff0e7;
+                color: #29282c;
+                font-size: 11px;
+                font-weight: 600;
+                padding: 4px;
+            """
+        elif cell_value:
+            cell_text = cell_value
+            style = """
+                border: 1px solid #f0d9c8;
+                border-radius: 6px;
+                background: #fff5ee;
+                color: #29282c;
+                font-size: 11px;
+                font-weight: 600;
+                padding: 4px;
+            """
+        else:
+            cell_text = "点击编辑"
+            style = """
+                border: 1px dashed #eee2d8;
+                background: #fffdfa;
+                color: #b8aaa0;
+                border-radius: 5px;
+                font-size: 11px;
+                padding: 4px;
+            """
+
+        cell = QLabel(cell_text)
+        cell.setAlignment(Qt.AlignCenter)
+        cell.setWordWrap(True)
+        cell.setMinimumHeight(42)
+        cell.setCursor(Qt.PointingHandCursor)
+        cell.setStyleSheet(style)
+
+        def open_editor(_event, row=row_index, day=day_name):
+            self._edit_timetable_cell(row, day)
+
+        cell.mousePressEvent = open_editor  # type: ignore[method-assign]
+        return cell
+
+    def _edit_timetable_cell(self, row_index: int, day_name: str) -> None:
+        df = self.bridge.ensure_timetable()
+        current_value = str(df.at[row_index, day_name]).strip()
+        text, ok = QInputDialog.getMultiLineText(
+            self.page,
+            f"编辑 {day_name} 第 {row_index + 1} 节",
+            "课程信息（留空表示无课；推荐格式：课程名（地点））：",
+            current_value,
+        )
+        if not ok:
+            return
+
+        self.bridge.set_timetable_cell(row_index, day_name, text)
+        self._render_timetable_preview()
+        self.refresh()
 
     def _style_result_labels(self) -> None:
         for name in ("resultLine", "resultLine_2", "resultLine_3"):

@@ -1,11 +1,151 @@
 {
     "Achievements": [
         {
-            "id": 1,
-            "name": "Fresh Start",
-            "description": "Record a sleep for the first time.",
+            "id": "first_sleep",
+            "name": "初入梦乡",
+            "description": "完成第一次睡眠记录",
             "reward": 10,
             "demands": {}
+        },
+        {
+            "id": "sleep_8h",
+            "name": "睡眠达人",
+            "description": "单次夜间睡眠达到 8 小时",
+            "reward": 20,
+            "demands": {
+                "sleep_type": "night",
+                "min_duration_hours": 8
+            }
+        },
+        {
+            "id": "early_sleep",
+            "name": "早睡早起",
+            "description": "23 点前入睡且夜间睡眠达到 8 小时",
+            "reward": 30,
+            "demands": {
+                "sleep_type": "night",
+                "max_start_time": "23:00",
+                "min_duration_hours": 8
+            }
+        },
+        {
+            "id": "nap_master",
+            "name": "午休大师",
+            "description": "完成一次不少于 15 分钟的有效午睡",
+            "reward": 15,
+            "demands": {
+                "sleep_type": "nap",
+                "min_duration_hours": 0.25
+            }
+        },
+        {
+            "id": "deep_recovery",
+            "name": "深度回血",
+            "description": "单次夜间睡眠达到 9 小时",
+            "reward": 25,
+            "demands": {
+                "sleep_type": "night",
+                "min_duration_hours": 9
+            }
+        },
+        {
+            "id": "power_nap",
+            "name": "高效小憩",
+            "description": "完成一次 15 到 45 分钟的午睡",
+            "reward": 20,
+            "demands": {
+                "sleep_type": "nap",
+                "min_duration_hours": 0.25,
+                "max_duration_hours": 0.75
+            }
+        },
+        {
+            "id": "quiet_night",
+            "name": "一夜安稳",
+            "description": "完成一次无中断且不少于 7 小时的夜间睡眠",
+            "reward": 25,
+            "demands": {
+                "sleep_type": "night",
+                "min_duration_hours": 7,
+                "max_interruption_count": 0
+            }
+        },
+        {
+            "id": "dorm_regular",
+            "name": "宿舍作息家",
+            "description": "在宿舍完成一次不少于 7 小时的夜间睡眠",
+            "reward": 15,
+            "demands": {
+                "sleep_type": "night",
+                "environment": "dormitory",
+                "min_duration_hours": 7
+            }
+        },
+        {
+            "id": "home_recharge",
+            "name": "回家充电",
+            "description": "在家中完成一次不少于 7 小时的夜间睡眠",
+            "reward": 15,
+            "demands": {
+                "sleep_type": "night",
+                "environment": "home",
+                "min_duration_hours": 7
+            }
+        },
+        {
+            "id": "three_checkins",
+            "name": "小有坚持",
+            "description": "累计完成 3 条睡眠记录",
+            "reward": 20,
+            "demands": {
+                "min_records": 3
+            }
+        },
+        {
+            "id": "nap_habit",
+            "name": "午休养成",
+            "description": "累计完成 3 次午睡记录",
+            "reward": 25,
+            "demands": {
+                "min_nap_records": 3
+            }
+        },
+        {
+            "id": "goal_five",
+            "name": "目标收割机",
+            "description": "累计 5 次睡眠达到当次目标时长",
+            "reward": 35,
+            "demands": {
+                "min_goal_records": 5
+            }
+        },
+        {
+            "id": "streak_three",
+            "name": "三日连胜",
+            "description": "连续 3 天夜间睡眠不少于 7 小时",
+            "reward": 35,
+            "demands": {
+                "min_streak_days": 3
+            }
+        },
+        {
+            "id": "week_logger",
+            "name": "一周有迹",
+            "description": "累计 7 个不同日期留下睡眠记录",
+            "reward": 40,
+            "demands": {
+                "min_unique_days": 7
+            }
+        },
+        {
+            "id": "steady_week",
+            "name": "稳定作息周",
+            "description": "至少 7 次夜间记录，平均睡眠达到 7.5 小时",
+            "reward": 50,
+            "demands": {
+                "min_night_records": 7,
+                "min_average_duration_hours": 7.5
+            }
         }
     ]
 }

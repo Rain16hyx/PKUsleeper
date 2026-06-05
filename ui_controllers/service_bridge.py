@@ -100,7 +100,7 @@ class ServiceBridge:
 
         if days < 9999:
             start_date = date.today() - timedelta(days=days - 1)
-            records = [r for r in records if r.started_at and r.started_at.date() >= start_date]
+            records = [r for r in records if self.record_date(r) >= start_date]
 
         records.sort(key=lambda record: record.started_at, reverse=True)
         return records
@@ -151,7 +151,7 @@ class ServiceBridge:
         weekly_completion = [False] * 7
 
         for record in self.get_recent_records(14, sleep_type=SleepType.NIGHT):
-            record_date = record.started_at.date()
+            record_date = self.record_date(record)
             if week_start <= record_date <= week_start + timedelta(days=6):
                 expected = (record.expected_duration_minutes or goal.target_duration_minutes) / 60
                 weekly_completion[record_date.weekday()] = self._duration_hours(record) >= expected
@@ -175,7 +175,7 @@ class ServiceBridge:
         }
 
     def get_achievement_lists(self) -> dict[str, list[SleepAchievement]]:
-        records = self.get_recent_records(9999, sleep_type=SleepType.NIGHT)
+        records = self.get_recent_records(9999)
         manager = getattr(self.tracker, "achievement_manager", None)
         achievements: list[SleepAchievement] = getattr(manager, "all_achievements", []) if manager else []
         dev_achievement = self._load_developer_state().get("achievement", {})
@@ -183,7 +183,7 @@ class ServiceBridge:
         auto_unlocked = {
             achievement.achievement_id
             for achievement in achievements
-            if any(achievement.fulfilled_by(record) for record in records)
+            if self._achievement_fulfilled_by_records(achievement, records)
         }
         manual_unlocked = set(dev_achievement.get("unlocked_ids", []))
         manual_locked = set(dev_achievement.get("locked_ids", []))
@@ -200,6 +200,64 @@ class ServiceBridge:
             if achievement.achievement_id not in unlocked_ids
         ]
         return {"unlocked": unlocked, "locked": locked}
+
+    def _achievement_fulfilled_by_records(
+        self,
+        achievement: SleepAchievement,
+        records: list[SleepRecord],
+    ) -> bool:
+        demands = achievement.demands
+        aggregate_keys = {
+            "min_records",
+            "min_night_records",
+            "min_nap_records",
+            "min_goal_records",
+            "min_streak_days",
+            "min_unique_days",
+            "min_average_duration_hours",
+        }
+        if not aggregate_keys.intersection(demands):
+            return any(achievement.fulfilled_by(record) for record in records)
+
+        night_records = [r for r in records if r.sleep_type == SleepType.NIGHT]
+        nap_records = [r for r in records if r.sleep_type == SleepType.NAP]
+
+        if len(records) < demands.get("min_records", 0):
+            return False
+        if len(night_records) < demands.get("min_night_records", 0):
+            return False
+        if len(nap_records) < demands.get("min_nap_records", 0):
+            return False
+
+        min_unique_days = demands.get("min_unique_days")
+        if min_unique_days is not None:
+            unique_days = {self.record_date(record) for record in records}
+            if len(unique_days) < min_unique_days:
+                return False
+
+        min_goal_records = demands.get("min_goal_records")
+        if min_goal_records is not None:
+            goal_records = [
+                record
+                for record in records
+                if self._duration_hours(record) * 60 >= (record.expected_duration_minutes or 480)
+            ]
+            if len(goal_records) < min_goal_records:
+                return False
+
+        min_streak_days = demands.get("min_streak_days")
+        if min_streak_days is not None and self._estimate_streak_days() < min_streak_days:
+            return False
+
+        min_average = demands.get("min_average_duration_hours")
+        if min_average is not None:
+            if not night_records:
+                return False
+            average = sum(self._duration_hours(record) for record in night_records) / len(night_records)
+            if average < min_average:
+                return False
+
+        return True
 
     def get_map_dashboard(self) -> dict[str, Any]:
         count = len(self.get_recent_records(9999))
@@ -243,6 +301,33 @@ class ServiceBridge:
         except Exception as exc:  # noqa: BLE001
             print(f"解析课表 Excel 失败：{exc}")
             return False
+
+    def ensure_timetable(self) -> pd.DataFrame:
+        """确保存在 12 节 x 5 天的课表数据，供手动编辑使用。"""
+        if self.current_timetable_df is None:
+            self.current_timetable_df = pd.DataFrame(
+                "",
+                index=range(12),
+                columns=self.WEEKDAYS,
+            )
+            return self.current_timetable_df
+
+        df = self.current_timetable_df.copy().reset_index(drop=True)
+        for day in self.WEEKDAYS:
+            if day not in df.columns:
+                df[day] = ""
+        while len(df) < 12:
+            df.loc[len(df)] = {day: "" for day in df.columns}
+        df = df.fillna("")
+        self.current_timetable_df = df[[*self.WEEKDAYS]].head(12).reset_index(drop=True)
+        return self.current_timetable_df
+
+    def set_timetable_cell(self, row_index: int, day_name: str, value: str) -> None:
+        if day_name not in self.WEEKDAYS or not 0 <= row_index < 12:
+            raise ValueError("课表位置超出可编辑范围。")
+        df = self.ensure_timetable()
+        df.at[row_index, day_name] = value.strip()
+        self.has_planned = False
 
     def _parse_cell_content(self, cell_value: Any) -> dict[str, str] | None:
         """解析选课网单元格，兼容课程名里自带括号的情况。"""
@@ -445,7 +530,7 @@ class ServiceBridge:
     def _estimate_streak_days(self) -> int:
         records = self.get_recent_records(9999, sleep_type=SleepType.NIGHT)
         completed_dates = {
-            record.started_at.date()
+            self.record_date(record)
             for record in records
             if self._duration_hours(record) >= 7.0
         }
@@ -492,6 +577,13 @@ class ServiceBridge:
     def _duration_hours(record: SleepRecord) -> float:
         minutes = (record.ended_at - record.started_at).total_seconds() / 60
         return round(minutes / 60, 1)
+
+    @staticmethod
+    def record_date(record: SleepRecord) -> date:
+        """夜间睡眠按醒来日期统计，避免跨午夜记录偏到前一天。"""
+        if record.sleep_type == SleepType.NIGHT and record.ended_at:
+            return record.ended_at.date()
+        return record.started_at.date()
 
     @staticmethod
     def _average_time_text(values: list[datetime], night_start: bool = False) -> str:

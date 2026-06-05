@@ -104,9 +104,26 @@ class SleepAchievement:
 
     def fulfilled_by(self, record: SleepRecord) -> bool:
         """Return whether this record satisfies the achievement condition."""
+        aggregate_keys = {
+            "min_records",
+            "min_night_records",
+            "min_nap_records",
+            "min_goal_records",
+            "min_streak_days",
+            "min_unique_days",
+            "min_average_duration_hours",
+        }
+        if aggregate_keys.intersection(self.demands):
+            return False
+
         # 睡眠类型
         sleep_type_demand = self.demands.get("sleep_type")
         if sleep_type_demand and record.sleep_type != sleep_type_demand:
+            return False
+
+        # 睡眠环境
+        environment_demand = self.demands.get("environment")
+        if environment_demand and record.environment != environment_demand:
             return False
         
         # 最小入睡时长
@@ -115,6 +132,16 @@ class SleepAchievement:
             duration_hours = (record.ended_at - record.started_at).total_seconds() / 3600
             if duration_hours < min_hours:
                 return False
+
+        max_hours = self.demands.get("max_duration_hours")
+        if max_hours is not None:
+            duration_hours = (record.ended_at - record.started_at).total_seconds() / 3600
+            if duration_hours > max_hours:
+                return False
+
+        max_interruptions = self.demands.get("max_interruption_count")
+        if max_interruptions is not None and len(record.interruptions) > max_interruptions:
+            return False
         
         # 最晚入睡时间
         max_start = self.demands.get("max_start_time")
