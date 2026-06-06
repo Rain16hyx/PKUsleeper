@@ -7,7 +7,7 @@ from typing import Callable
 import re
 
 import pyqtgraph as pg
-from PySide6.QtCore import QTime, Qt
+from PySide6.QtCore import QEvent, QObject, QTime, Qt
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QInputDialog,
     QLabel,
+    QLineEdit,
     QMessageBox,
     QProgressBar,
     QPushButton,
@@ -35,6 +36,24 @@ from utils.data_processing import SleepReportBuilder
 
 NavigateCallback = Callable[[str], None]
 RefreshCallback = Callable[[], None]
+
+
+class ClickableRowFilter(QObject):
+    """让 Designer 加载出的行控件可靠响应点击。"""
+
+    def __init__(self, callback: Callable[[], None], parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.callback = callback
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if (
+            event.type() == QEvent.Type.MouseButtonRelease
+            and hasattr(event, "button")
+            and event.button() == Qt.MouseButton.LeftButton
+        ):
+            self.callback()
+            return True
+        return super().eventFilter(watched, event)
 
 
 class HomeController(UiController):
@@ -651,10 +670,104 @@ class PlanningController(UiController):
 
 
 class SleepMapController(UiController):
+    NODE_BUTTONS = {
+        "west": "pushButton",
+        "library": "pushButton_4",
+        "tower": "pushButton_2",
+        "lake": "pushButton_5",
+    }
+
+    NODE_BUTTON_BASE_STYLE = (
+        "min-width: 78px; max-width: 96px; min-height: 30px; max-height: 30px; "
+        "border-radius: 8px; font-size: 14px; font-weight: 800; padding: 0 10px;"
+    )
+    NODE_BUTTON_STYLES = {
+        "recommended": (
+            NODE_BUTTON_BASE_STYLE +
+            "border: 1px solid #b8151d; "
+            "background: #b8151d; color: #ffffff;"
+        ),
+        "unlocked": (
+            NODE_BUTTON_BASE_STYLE +
+            "border: 1px solid #d8bda1; "
+            "background: #fffefd; color: #9a121a;"
+        ),
+        "locked": (
+            NODE_BUTTON_BASE_STYLE +
+            "border: 1px solid #e8c07f; "
+            "background: #f3cf92; color: #744c12;"
+        ),
+    }
+    NODE_BUTTON_TEXT = {
+        "recommended": "推荐",
+        "unlocked": "已解锁",
+        "locked": "待解锁",
+    }
+
+    def bind_events(self) -> None:
+        for node_id, button_name in self.NODE_BUTTONS.items():
+            button = self.button(button_name)
+            if button is None:
+                continue
+            button.setCursor(Qt.PointingHandCursor)
+            button.clicked.connect(
+                lambda _checked=False, current_node=node_id: self._show_node_condition(current_node)
+            )
+
     def refresh(self) -> None:
         data = self.bridge.get_map_dashboard()
         self.set_label_text("label_2", f"已解锁 {data['unlocked_count']} / {data['total_count']} 个地标")
         self.set_label_text("recommendPlace", data["recommended_node"])
+        self.set_label_text("recommendDesc", f"下一节点条件：{data.get('recommended_condition', '--')}")
+        self._node_data = {node["node_id"]: node for node in data.get("nodes", [])}
+
+        for node in data.get("nodes", []):
+            self._render_node_button(node)
+
+    def _render_node_button(self, node: dict[str, object]) -> None:
+        node_id = str(node["node_id"])
+        button_name = self.NODE_BUTTONS.get(node_id)
+        if button_name is None:
+            return
+
+        button = self.button(button_name)
+        if button is None:
+            return
+
+        state = self._node_state(node)
+        button.setText(self.NODE_BUTTON_TEXT[state])
+        button.setStyleSheet(self.NODE_BUTTON_STYLES[state])
+
+    @staticmethod
+    def _node_state(node: dict[str, object]) -> str:
+        if node.get("recommended"):
+            return "recommended"
+        if node.get("unlocked"):
+            return "unlocked"
+        return "locked"
+
+    def _show_node_condition(self, node_id: str) -> None:
+        node_data = getattr(self, "_node_data", None)
+        if not node_data:
+            data = self.bridge.get_map_dashboard()
+            node_data = {node["node_id"]: node for node in data.get("nodes", [])}
+            self._node_data = node_data
+
+        node = node_data.get(node_id)
+        if node is None:
+            return
+
+        status = {
+            "recommended": "当前推荐",
+            "unlocked": "已解锁",
+            "locked": "待解锁",
+        }[self._node_state(node)]
+
+        QMessageBox.information(
+            self.page,
+            str(node["name"]),
+            f"解锁条件：{node['condition']}\n当前状态：{status}",
+        )
 
 
 class GoalController(UiController):
@@ -663,6 +776,7 @@ class GoalController(UiController):
     def bind_events(self) -> None:
         self._bind_clickable_row("settingRow", self._on_change_duration)
         self._bind_clickable_row("settingRow_2", self._on_change_start_time)
+        self._bind_clickable_row("settingRow_3", self._on_change_wake_time)
         self.connect_button("saveButton", self._on_save_goal)
 
     def refresh(self) -> None:
@@ -702,33 +816,28 @@ class GoalController(UiController):
         if ok:
             self.set_label_text("settingValue", f"{value:.1f} 小时")
             self._refresh_wake_preview()
+            self._sync_current_goal_preview()
 
     def _on_change_start_time(self) -> None:
-        dialog = QDialog(self.page)
-        dialog.setWindowTitle("设置入睡时间")
-        layout = QVBoxLayout(dialog)
+        selected = self._pick_time("设置入睡时间", "settingValue_2", QTime(23, 30))
+        if selected is None:
+            return
+        self.set_label_text("settingValue_2", selected)
+        self._refresh_wake_preview()
+        self._sync_current_goal_preview()
 
-        time_edit = QTimeEdit(dialog)
-        time_edit.setDisplayFormat("HH:mm")
-        current_text = self.label("settingValue_2").text() if self.label("settingValue_2") else "23:30"
-        time_edit.setTime(QTime.fromString(current_text, "HH:mm") if current_text != "--:--" else QTime(23, 30))
-        layout.addWidget(time_edit)
-
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, dialog)
-        buttons.accepted.connect(dialog.accept)
-        buttons.rejected.connect(dialog.reject)
-        layout.addWidget(buttons)
-
-        if dialog.exec() == QDialog.Accepted:
-            self.set_label_text("settingValue_2", time_edit.time().toString("HH:mm"))
-            self._refresh_wake_preview()
+    def _on_change_wake_time(self) -> None:
+        selected = self._pick_time("设置起床时间", "settingValue_3", QTime(7, 30))
+        if selected is None:
+            return
+        self.set_label_text("settingValue_3", selected)
+        self._refresh_duration_from_wake()
+        self._sync_current_goal_preview()
 
     def _on_save_goal(self) -> None:
         try:
             hours = self._duration_from_label()
-            time_label = self.label("settingValue_2")
-            time_text = time_label.text() if time_label is not None else "23:30"
-            parsed_time = datetime.strptime(time_text, "%H:%M")
+            parsed_time = self._start_datetime_from_label()
             new_goal = SleepGoal(
                 target_value=hours,
                 target_duration_minutes=int(hours * 60),
@@ -751,13 +860,14 @@ class GoalController(UiController):
         if row is None:
             return
 
-        def handler(_event, fn=callback):
-            fn()
-
+        if not hasattr(self, "_row_click_filters"):
+            self._row_click_filters = []
+        click_filter = ClickableRowFilter(callback, row)
         widgets = [row, *row.findChildren(QWidget)]
         for widget in widgets:
             widget.setCursor(Qt.PointingHandCursor)
-            widget.mousePressEvent = handler  # type: ignore[method-assign]
+            widget.installEventFilter(click_filter)
+        self._row_click_filters.append(click_filter)
 
     def _duration_from_label(self) -> float:
         label = self.label("settingValue")
@@ -766,11 +876,60 @@ class GoalController(UiController):
         return float(match.group(0)) if match else 8.0
 
     def _refresh_wake_preview(self) -> None:
-        time_label = self.label("settingValue_2")
-        start_text = time_label.text() if time_label is not None else "23:30"
-        start_dt = datetime.strptime(start_text, "%H:%M")
+        start_dt = self._start_datetime_from_label()
         duration_minutes = int(self._duration_from_label() * 60)
         self.set_label_text("settingValue_3", self._wake_time_text(start_dt, duration_minutes))
+
+    def _refresh_duration_from_wake(self) -> None:
+        start_dt = self._start_datetime_from_label()
+        wake_dt = self._wake_datetime_from_label(start_dt)
+        minutes = int((wake_dt - start_dt).total_seconds() / 60)
+        minutes = max(240, min(minutes, 12 * 60))
+        self.set_label_text("settingValue", f"{minutes / 60:.1f} 小时")
+
+    def _sync_current_goal_preview(self) -> None:
+        hours = self._duration_from_label()
+        start_dt = self._start_datetime_from_label()
+        wake_text = self.label("settingValue_3").text() if self.label("settingValue_3") else "--:--"
+        self.set_label_text("goalNameLabel", "每日睡眠目标")
+        self.set_label_text("goalValueLabel", f"{hours:.1f}")
+        self.set_label_text("goalUnitLabel", "小时")
+        self.set_label_text("recommendLabel", f"推荐作息：{start_dt:%H:%M} - {wake_text}")
+
+    def _pick_time(self, title: str, label_name: str, fallback: QTime) -> str | None:
+        dialog = QDialog(self.page)
+        dialog.setWindowTitle(title)
+        layout = QVBoxLayout(dialog)
+
+        time_edit = QTimeEdit(dialog)
+        time_edit.setDisplayFormat("HH:mm")
+        current_label = self.label(label_name)
+        current_text = current_label.text() if current_label is not None else fallback.toString("HH:mm")
+        current_time = QTime.fromString(current_text, "HH:mm")
+        time_edit.setTime(current_time if current_time.isValid() else fallback)
+        layout.addWidget(time_edit)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, dialog)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+
+        if dialog.exec() == QDialog.Accepted:
+            return time_edit.time().toString("HH:mm")
+        return None
+
+    def _start_datetime_from_label(self) -> datetime:
+        label = self.label("settingValue_2")
+        text = label.text() if label is not None else "23:30"
+        return datetime.strptime(text, "%H:%M")
+
+    def _wake_datetime_from_label(self, start_dt: datetime) -> datetime:
+        label = self.label("settingValue_3")
+        text = label.text() if label is not None else self._wake_time_text(start_dt, int(self._duration_from_label() * 60))
+        wake_dt = datetime.strptime(text, "%H:%M")
+        if wake_dt <= start_dt:
+            wake_dt += timedelta(days=1)
+        return wake_dt
 
     def _update_week_dots(self, completion: list[bool]) -> None:
         lit_style = (
@@ -807,7 +966,21 @@ class AchievementController(UiController):
         self.set_label_text("statValue", str(data["unlocked_count"]))
         self.set_label_text("statValue_2", str(data["streak_days"]))
         self.set_label_text("statValue_3", str(data["points"]))
-        self.set_label_text("nextCount", str(max(0, 5 - data["unlocked_count"])))
+        self.set_label_text("levelValue", f"Lv.{data['level']}")
+        self.set_label_text("levelName", data["level_name"])
+        self.set_label_text("nextCount", str(data["next_count"]))
+        self.set_label_text("progressText", f"{data['level_progress_current']} / {data['level_progress_target']}")
+
+        if data["next_count"] == 0:
+            self.set_label_text("nextDesc", "已完成当前成就目录")
+            self.set_label_text("nextDesc_2", "个成就")
+        else:
+            self.set_label_text("nextDesc", "距离下一等级还差")
+            self.set_label_text("nextDesc_2", "个成就")
+
+        progress_bar = self.page.findChild(QProgressBar, "levelProgress")
+        if progress_bar is not None:
+            progress_bar.setValue(data["level_progress_rate"])
 
         achievement_data = self.bridge.get_achievement_lists()
         unlocked_layout = self.page.findChild(QVBoxLayout, "unlockedAchievementsLayout")
@@ -815,13 +988,21 @@ class AchievementController(UiController):
         if unlocked_layout is None or locked_layout is None:
             return
 
+        self._prepare_scroll_areas()
         self._clear_layout(unlocked_layout)
         self._clear_layout(locked_layout)
 
-        for achievement in achievement_data["unlocked"]:
-            unlocked_layout.addWidget(self._create_achievement_row(achievement, True))
-        for achievement in achievement_data["locked"]:
-            locked_layout.addWidget(self._create_achievement_row(achievement, False))
+        if achievement_data["unlocked"]:
+            for achievement in achievement_data["unlocked"]:
+                unlocked_layout.addWidget(self._create_achievement_row(achievement, True))
+        else:
+            unlocked_layout.addWidget(self._create_empty_row("暂无已解锁成就"))
+
+        if achievement_data["locked"]:
+            for achievement in achievement_data["locked"]:
+                locked_layout.addWidget(self._create_achievement_row(achievement, False))
+        else:
+            locked_layout.addWidget(self._create_empty_row("全部成就均已解锁"))
 
         unlocked_layout.addStretch()
         locked_layout.addStretch()
@@ -829,20 +1010,83 @@ class AchievementController(UiController):
     def _create_achievement_row(self, achievement, unlocked: bool = True) -> QFrame:
         row = QFrame()
         row.setObjectName("achievementRow" if unlocked else "lockedRow")
+        row.setStyleSheet(
+            """
+            QFrame {
+                background: #fffefa;
+                border: 1px solid #f0dfca;
+                border-radius: 8px;
+            }
+            QLabel {
+                background: transparent;
+                border: none;
+            }
+            """
+            if unlocked
+            else """
+            QFrame {
+                background: #fffefd;
+                border: 1px solid #eadfd3;
+                border-radius: 8px;
+            }
+            QLabel {
+                background: transparent;
+                border: none;
+            }
+            """
+        )
         layout = QHBoxLayout(row)
-        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setContentsMargins(14, 10, 14, 10)
+        layout.setSpacing(14)
 
         name = QLabel(achievement.name)
         desc = QLabel(achievement.description)
         status = QLabel("已解锁" if unlocked else "待解锁")
-        name.setMinimumWidth(120)
+        name.setMinimumWidth(126)
+        name.setStyleSheet(
+            "color: #242328; font-size: 15px; font-weight: 800;"
+            if unlocked
+            else "color: #4c4744; font-size: 15px; font-weight: 800;"
+        )
+        desc.setStyleSheet("color: #6f6761; font-size: 13px;")
         desc.setWordWrap(True)
+        status.setAlignment(Qt.AlignCenter)
+        status.setMinimumWidth(70)
+        status.setStyleSheet(
+            "color: #c91d25; font-size: 13px; font-weight: 800;"
+            if unlocked
+            else "color: #6f6761; font-size: 13px; font-weight: 700;"
+        )
 
         layout.addWidget(name)
-        layout.addWidget(desc)
+        layout.addWidget(desc, 1)
         layout.addStretch()
         layout.addWidget(status)
         return row
+
+    def _create_empty_row(self, text: str) -> QLabel:
+        label = QLabel(text)
+        label.setAlignment(Qt.AlignCenter)
+        label.setMinimumHeight(96)
+        label.setStyleSheet(
+            """
+            color: #9c918a;
+            background: #fffefa;
+            border: 1px dashed #ead9c5;
+            border-radius: 8px;
+            font-size: 14px;
+            """
+        )
+        return label
+
+    def _prepare_scroll_areas(self) -> None:
+        for name in ("unlockedScrollArea", "lockedScrollArea"):
+            scroll = self.page.findChild(QScrollArea, name)
+            if scroll is None:
+                continue
+            scroll.setWidgetResizable(True)
+            scroll.setStyleSheet("QScrollArea { background: #fffefd; border: none; }")
+            scroll.viewport().setStyleSheet("background: #fffefd;")
 
     @staticmethod
     def _clear_layout(layout: QVBoxLayout) -> None:
@@ -853,9 +1097,34 @@ class AchievementController(UiController):
                 widget.deleteLater()
 
 
-class StaticPageController(UiController):
-    """暂未实现的静态页面。"""
+class ProfileController(UiController):
+    """我的页面：仅提供轻量个性化设置。"""
+
+    def bind_events(self) -> None:
+        self.connect_button("editUsernameButton", self._on_edit_username)
 
     def refresh(self) -> None:
-        now = datetime.now()
-        self.set_label_text("subtitleLabel", f"当前时间：{now:%Y-%m-%d %H:%M}")
+        user = getattr(self.bridge.tracker.user_manager, "current_user", None)
+        username = getattr(user, "username", "PKU student")
+        self.set_label_text("usernameValue", username)
+        self.set_label_text("profileHint", "用户名仅用于本地展示，不影响打卡、报告或成就数据。")
+
+    def _on_edit_username(self) -> None:
+        current = self.label("usernameValue").text() if self.label("usernameValue") else "PKU student"
+        text, ok = QInputDialog.getText(
+            self.page,
+            "设置用户名",
+            "请输入用户名：",
+            QLineEdit.EchoMode.Normal,
+            current,
+        )
+        if not ok:
+            return
+
+        username = text.strip()
+        if not username:
+            self.warning("提示", "用户名不能为空。")
+            return
+
+        self.bridge.tracker.user_manager.update_personal_info(username)
+        self.refresh()

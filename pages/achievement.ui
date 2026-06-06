@@ -222,20 +222,7 @@ lockedAchievementsLayout
     font-size: 14px;
 }
 
-#viewAllButton,
-#viewAllButton_2 {
-    min-height: 34px;
-    border: none;
-    background: transparent;
-    color: #c91d25;
-    font-size: 15px;
-    font-weight: 800;
-}
-
-#viewAllButton:hover,
-#viewAllButton_2:hover {
-    color: #9f1118;
-}</string>
+</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,1">
    <property name="spacing">
@@ -454,7 +441,7 @@ lockedAchievementsLayout
         <item><widget class="QLabel" name="cardTitle"><property name="text"><string>已解锁成就</string></property></widget></item>
         <item>
          <widget class="QScrollArea" name="unlockedScrollArea">
-          <property name="widgetResizeable">
+          <property name="widgetResizable">
            <bool>true</bool>
           </property>
           
@@ -489,13 +476,6 @@ lockedAchievementsLayout
            </layout>
 
           </widget>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="viewAllButton">
-          <property name="text">
-           <string>查看全部 ›</string>
-          </property>
          </widget>
         </item>
        </layout>
@@ -581,14 +561,6 @@ lockedAchievementsLayout
 
           </widget>
 
-         </widget>
-        </item>
-
-        <item>
-         <widget class="QPushButton" name="viewAllButton_2">
-          <property name="text">
-           <string>查看全部 ›</string>
-          </property>
          </widget>
         </item>
 

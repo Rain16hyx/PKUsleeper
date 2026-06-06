@@ -169,7 +169,9 @@ QLabel {
 
 #chevronLabel,
 #chevronLabel_2,
-#chevronLabel_3 {
+#chevronLabel_3,
+#durationBtn,
+#startTimeBtn {
     color: #c7ac91;
     font-size: 22px;
 }

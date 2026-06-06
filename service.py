@@ -248,12 +248,9 @@ class GoalManager:
 
     @property
     def sleep_goal(self) -> SleepGoal | None:
-        """
-        当外部访问 .sleep_goal 时，如果内存为空，自动触发通过 repository 捞取数据
-        """
-        if self._sleep_goal is None:
-            if self.repository:
-                self._sleep_goal = self.repository.load_current_goal()
+        """内存为空时从 repository 读取当前目标。"""
+        if self._sleep_goal is None and self.repository is not None:
+            self._sleep_goal = self.repository.load_current_goal()
         return self._sleep_goal
 
     @sleep_goal.setter
@@ -273,6 +270,7 @@ class GoalManager:
     def update(self, completed_goals: list[SleepGoal]) -> None:
         """当前版本只需要保留目标本身，完成记录由 UI 统计历史数据。"""
         return None
+
 
 class SleepMapManager:
     """Service for sleep map unlock progress."""

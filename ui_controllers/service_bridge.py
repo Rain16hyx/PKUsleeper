@@ -28,6 +28,12 @@ class ServiceBridge:
 
     WEEKDAYS = ["周一", "周二", "周三", "周四", "周五"]
     ALL_WEEKDAYS = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+    MAP_NODES: tuple[dict[str, Any], ...] = (
+        {"node_id": "west", "name": "西门", "condition": "完成第 1 次睡眠打卡"},
+        {"node_id": "library", "name": "图书馆", "condition": "累计完成 2 条睡眠记录"},
+        {"node_id": "tower", "name": "博雅塔", "condition": "累计完成 4 条睡眠记录"},
+        {"node_id": "lake", "name": "未名湖", "condition": "累计完成 6 条睡眠记录"},
+    )
 
     def __init__(self, tracker: MainTracker) -> None:
         self.tracker = tracker
@@ -168,10 +174,30 @@ class ServiceBridge:
     def get_achievement_dashboard(self) -> dict[str, Any]:
         achievement_lists = self.get_achievement_lists()
         unlocked_count = len(achievement_lists["unlocked"])
+        total_count = unlocked_count + len(achievement_lists["locked"])
+        level_index = unlocked_count // 5 + 1
+        level_names = {
+            1: "作息新手",
+            2: "作息探索者",
+            3: "稳定作息家",
+            4: "梦境收藏家",
+        }
+        progress_current = unlocked_count % 5
+        next_count = 5 - progress_current
+        if total_count and unlocked_count >= total_count:
+            progress_current = 5
+            next_count = 0
         return {
             "unlocked_count": unlocked_count,
+            "total_count": total_count,
             "streak_days": self._estimate_streak_days(),
             "points": unlocked_count * 50,
+            "level": level_index,
+            "level_name": level_names.get(level_index, "睡眠大师"),
+            "level_progress_current": progress_current,
+            "level_progress_target": 5,
+            "level_progress_rate": round(progress_current / 5 * 100),
+            "next_count": next_count,
         }
 
     def get_achievement_lists(self) -> dict[str, list[SleepAchievement]]:
@@ -261,26 +287,58 @@ class ServiceBridge:
 
     def get_map_dashboard(self) -> dict[str, Any]:
         count = len(self.get_recent_records(9999))
-        auto_unlocked = min(4, 1 + count // 2) if count else 0
+        auto_unlocked = min(len(self.MAP_NODES), 1 + count // 2) if count else 0
         dev_map = self._load_developer_state().get("map", {})
-        manual_nodes = dev_map.get("unlocked_node_ids", []) or []
-        total_count = int(dev_map.get("total_count") or 4)
-        total_count = max(total_count, len(manual_nodes), 1)
+        manual_nodes = set(dev_map.get("unlocked_node_ids", []) or [])
+        total_count = int(dev_map.get("total_count") or len(self.MAP_NODES))
+        total_count = max(total_count, len(self.MAP_NODES), 1)
 
         if dev_map.get("unlocked_count") is None:
-            unlocked = max(auto_unlocked, len(manual_nodes))
+            unlocked_count = auto_unlocked
         else:
-            unlocked = int(dev_map.get("unlocked_count") or 0)
-        unlocked = max(0, min(unlocked, total_count))
+            unlocked_count = int(dev_map.get("unlocked_count") or 0)
+        unlocked_count = max(0, min(unlocked_count, len(self.MAP_NODES)))
 
-        recommended_node = dev_map.get("recommended_node")
+        unlocked_ids = {
+            node["node_id"]
+            for node in self.MAP_NODES[:unlocked_count]
+        }
+        unlocked_ids.update(
+            node["node_id"]
+            for node in self.MAP_NODES
+            if node["node_id"] in manual_nodes or node["name"] in manual_nodes
+        )
+
+        recommended_node = dev_map.get("recommended_node") or ""
         if not recommended_node:
-            recommended_node = "图书馆" if unlocked >= 2 else "西门"
+            next_node = next(
+                (node for node in self.MAP_NODES if node["node_id"] not in unlocked_ids),
+                self.MAP_NODES[-1],
+            )
+            recommended_node = next_node["name"]
+
+        nodes = []
+        for node in self.MAP_NODES:
+            is_recommended = recommended_node in (node["node_id"], node["name"])
+            nodes.append(
+                {
+                    **node,
+                    "unlocked": node["node_id"] in unlocked_ids,
+                    "recommended": is_recommended,
+                }
+            )
+
+        recommended_info = next(
+            (node for node in nodes if node["recommended"]),
+            nodes[-1],
+        )
 
         return {
-            "unlocked_count": unlocked,
+            "unlocked_count": min(max(unlocked_count, len(unlocked_ids)), total_count),
             "total_count": total_count,
-            "recommended_node": recommended_node,
+            "recommended_node": recommended_info["name"],
+            "recommended_condition": recommended_info["condition"],
+            "nodes": nodes,
         }
 
     def upload_timetable(self, file_path: str) -> bool:

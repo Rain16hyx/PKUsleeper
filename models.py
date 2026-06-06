@@ -64,9 +64,9 @@ class SleepRecord:
     user_id: str
     started_at: datetime
     ended_at: datetime
-    #注意这里的两个目标数据是指：这条睡眠记录产生的时候，用户当时的睡眠目标
+    # 记录生成时的睡眠目标快照
     expected_duration_minutes: int | None
-    expected_start_time: datetime 
+    expected_start_time: datetime
     sleep_type: SleepType
     environment: SleepEnvironment
     interruptions: tuple[SleepInterruption, ...] = ()
@@ -83,18 +83,15 @@ class SleepReport:
 
 @dataclass(slots=True)
 class SleepGoal:
-    #删除了goal_id & goal_type
     target_value: float
-    target_duration_minutes:int
-    #注意此处添加了一个目标睡眠时长
-    expected_sleep_start_time:datetime
+    target_duration_minutes: int
+    expected_sleep_start_time: datetime
     difficulty_level: int
 
     def fulfilled_by(self, record: SleepRecord) -> bool:
         """Return whether this record satisfies the goal condition."""
         raise NotImplementedError
 
-#这个可能要改成自动判断某些历史性成就是否达成，每存入一次睡眠记录时都要检查
 @dataclass(slots=True)
 class SleepAchievement:
     achievement_id: str
@@ -126,7 +123,7 @@ class SleepAchievement:
         if environment_demand and record.environment != environment_demand:
             return False
         
-        # 最小入睡时长
+        # 最小睡眠时长
         min_hours = self.demands.get("min_duration_hours")
         if min_hours is not None:
             duration_hours = (record.ended_at - record.started_at).total_seconds() / 3600

@@ -114,17 +114,36 @@ QLabel {
 }
 
 #lakeFrame {
-    background: #cfe8f4;
-    border: 1px solid #b9d8e8;
-    border-radius: 34px;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+        stop:0 #d8edf6, stop:1 #bfe0ef);
+    border: 1px solid #a8ccde;
+    border-radius: 38px;
 }
 
 #mapBuilding,
 #mapBuilding_2,
-#mapBuilding_3 {
+#mapBuilding_3,
+#mapBuilding_4 {
     color: rgba(150, 100, 58, 0.28);
     font-size: 18px;
     font-weight: 700;
+}
+
+#nodeIconWest,
+#nodeIconLibrary,
+#nodeIconTower,
+#nodeIconLake {
+    min-width: 92px;
+    max-width: 92px;
+    min-height: 74px;
+    max-height: 74px;
+    border: 1px dashed #e2cdb3;
+    border-radius: 16px;
+    background: rgba(255, 254, 253, 0.62);
+    color: #b78a55;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 8px;
 }
 
 #roadLabel,
@@ -137,61 +156,28 @@ QLabel {
 }
 
 #pushButton,
-#pushButton_4 {
-    min-width: 82px;
-    min-height: 78px;
-    border: 5px solid #ffffff;
-    border-radius: 39px;
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-        stop:0 #cf2b31, stop:1 #9f1219);
-    color: #ffffff;
-    font-size: 16px;
-    font-weight: 800;
-}
-
+#pushButton_4,
 #pushButton_2,
 #pushButton_5 {
-    min-width: 82px;
-    min-height: 78px;
-    border: 5px solid #ffffff;
-    border-radius: 39px;
-    background: #f0c991;
-    color: #ffffff;
-    font-size: 16px;
+    min-width: 78px;
+    max-width: 96px;
+    min-height: 30px;
+    max-height: 30px;
+    border: 1px solid #ead9c5;
+    border-radius: 8px;
+    background: #fffefd;
+    color: #b8151d;
+    font-size: 14px;
     font-weight: 800;
+    padding: 0 10px;
 }
 
 #pushButton:hover,
 #pushButton_4:hover,
 #pushButton_2:hover,
 #pushButton_5:hover {
-    border-color: #fff4dc;
-}
-
-#pushButton_3 {
-    min-width: 72px;
-    min-height: 40px;
-    border: 1px solid #ead9c5;
-    border-radius: 8px;
-    background: #fffefd;
-    color: #9a121a;
-    font-size: 14px;
-    font-weight: 700;
-}
-
-#nodeName,
-#nodeName_2,
-#nodeName_3,
-#nodeName_4 {
-    min-width: 76px;
-    min-height: 32px;
-    padding: 0 10px;
-    border: 1px solid #ead9c5;
-    border-radius: 7px;
-    background: rgba(255, 254, 253, 0.94);
-    color: #2a2729;
-    font-size: 16px;
-    font-weight: 800;
+    border-color: #cfa977;
+    background: #fff8ee;
 }
 
 #legendFrame,
@@ -203,14 +189,18 @@ QLabel {
 
 #legendDotUnlocked {
     min-width: 14px;
+    max-width: 14px;
     min-height: 14px;
+    max-height: 14px;
     border-radius: 7px;
     background: #b8151d;
 }
 
 #legendDotLocked {
     min-width: 14px;
+    max-width: 14px;
     min-height: 14px;
+    max-height: 14px;
     border-radius: 7px;
     background: #f0c991;
 }
@@ -407,6 +397,12 @@ QLabel {
          <property name="spacing">
           <number>8</number>
          </property>
+         <property name="rowStretch">
+          <string>0,0,1,0,1,1,0</string>
+         </property>
+         <property name="columnStretch">
+          <string>0,1,0,1,0,1,1,0</string>
+         </property>
          <item row="0" column="2" colspan="3">
           <widget class="QLabel" name="mapBuilding">
            <property name="text">
@@ -427,19 +423,20 @@ QLabel {
          <item row="1" column="0">
           <layout class="QVBoxLayout" name="westNodeLayout">
            <item>
-            <widget class="QPushButton" name="pushButton">
+            <widget class="QLabel" name="nodeIconWest">
              <property name="text">
-              <string>西门</string>
+              <string>西门
+图标位</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignCenter</set>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QLabel" name="nodeName">
+            <widget class="QPushButton" name="pushButton">
              <property name="text">
               <string>已解锁</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignmentFlag::AlignCenter</set>
              </property>
             </widget>
            </item>
@@ -458,19 +455,20 @@ QLabel {
          <item row="1" column="2">
           <layout class="QVBoxLayout" name="libraryNodeLayout">
            <item>
-            <widget class="QPushButton" name="pushButton_4">
+            <widget class="QLabel" name="nodeIconLibrary">
              <property name="text">
-              <string>图书馆</string>
+              <string>图书馆
+图标位</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignCenter</set>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QLabel" name="nodeName_2">
+            <widget class="QPushButton" name="pushButton_4">
              <property name="text">
               <string>推荐</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignmentFlag::AlignCenter</set>
              </property>
             </widget>
            </item>
@@ -489,19 +487,20 @@ QLabel {
          <item row="3" column="4">
           <layout class="QVBoxLayout" name="towerNodeLayout">
            <item>
-            <widget class="QPushButton" name="pushButton_2">
+            <widget class="QLabel" name="nodeIconTower">
              <property name="text">
-              <string>锁</string>
+              <string>博雅塔
+图标位</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignCenter</set>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QLabel" name="nodeName_3">
+            <widget class="QPushButton" name="pushButton_2">
              <property name="text">
-              <string>博雅塔</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignmentFlag::AlignCenter</set>
+              <string>待解锁</string>
              </property>
             </widget>
            </item>
@@ -520,25 +519,26 @@ QLabel {
          <item row="3" column="7">
           <layout class="QVBoxLayout" name="lakeNodeLayout">
            <item>
-            <widget class="QPushButton" name="pushButton_5">
+            <widget class="QLabel" name="nodeIconLake">
              <property name="text">
-              <string>锁</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="nodeName_4">
-             <property name="text">
-              <string>未名湖</string>
+              <string>未名湖
+图标位</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignmentFlag::AlignCenter</set>
              </property>
             </widget>
            </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_5">
+             <property name="text">
+              <string>待解锁</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
-         <item row="5" column="0" colspan="2">
+         <item row="6" column="0" colspan="2">
           <widget class="QFrame" name="legendFrame">
            <property name="frameShape">
             <enum>QFrame::Shape::NoFrame</enum>
@@ -590,7 +590,7 @@ QLabel {
            </layout>
           </widget>
          </item>
-         <item row="5" column="5" colspan="3">
+         <item row="6" column="5" colspan="3">
           <widget class="QFrame" name="recommendFrame">
            <property name="frameShape">
             <enum>QFrame::Shape::NoFrame</enum>
@@ -653,14 +653,17 @@ QLabel {
            </layout>
           </widget>
          </item>
-         <item row="6" column="2">
-          <widget class="QPushButton" name="pushButton_3">
+         <item row="4" column="2">
+          <widget class="QLabel" name="mapBuilding_4">
            <property name="text">
             <string>石舫</string>
            </property>
+           <property name="alignment">
+            <set>Qt::AlignmentFlag::AlignCenter</set>
+           </property>
           </widget>
          </item>
-         <item row="6" column="3">
+         <item row="4" column="3">
           <widget class="QLabel" name="mapBuilding_2">
            <property name="text">
             <string>静园草坪</string>
@@ -670,7 +673,7 @@ QLabel {
            </property>
           </widget>
          </item>
-         <item row="6" column="6">
+         <item row="4" column="6">
           <widget class="QLabel" name="mapBuilding_3">
            <property name="text">
             <string>未名湖畔</string>
