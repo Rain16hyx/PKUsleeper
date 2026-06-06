@@ -206,7 +206,7 @@ Line {
         </size>
        </property>
        <property name="text">
-        <string>首页</string>
+        <string>PKU SLEEPER 你的睡眠打卡助手</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>

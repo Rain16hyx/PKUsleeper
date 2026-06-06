@@ -159,7 +159,7 @@
          <item>
           <widget class="QLabel" name="appTitle">
            <property name="text">
-            <string>睡眠助手</string>
+            <string>主菜单</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
