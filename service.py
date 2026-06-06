@@ -6,7 +6,6 @@ from datetime import datetime
 from typing import Any
 
 from models import (
-    Node,
     Roommate,
     SleepAchievement,
     SleepEnvironment,
@@ -19,7 +18,6 @@ from models import (
 )
 from states import (
     AchievementState,
-    MappingState,
     SleepingState,
     SleepReportState,
     State,
@@ -51,7 +49,6 @@ class MainTracker:
         )
         self.achievement_manager = AchievementManager()
         self.goal_manager = GoalManager(record_repository=record_repository)
-        self.map_manager = SleepMapManager()
         self.user_manager = UserManager(user_id)
         self.current_view_state: State | None = None
 
@@ -111,9 +108,6 @@ class MainTracker:
 
         completed_goals = self.goal_manager.evaluate(record)
         self.goal_manager.update(completed_goals)
-
-        newly_unlocked_nodes = self.map_manager.evaluate(record)
-        self.map_manager.update(newly_unlocked_nodes)
 
         return record
 
@@ -270,31 +264,6 @@ class GoalManager:
     def update(self, completed_goals: list[SleepGoal]) -> None:
         """当前版本只需要保留目标本身，完成记录由 UI 统计历史数据。"""
         return None
-
-
-class SleepMapManager:
-    """Service for sleep map unlock progress."""
-
-    def __init__(self) -> None:
-        self.all_available_nodes: list[Node] = []
-        self.unlocked_nodes: list[Node] = []
-
-    def as_state(self) -> MappingState:
-        return MappingState(self.all_available_nodes, self.unlocked_nodes)
-
-    def load_map_nodes(self) -> dict[str, Any]:
-        return self.as_state().load_map_nodes()
-
-    def evaluate(self, record: SleepRecord | None) -> list[Node]:
-        return self.as_state().evaluate_new_unlocks(record)
-
-    def update(self, newly_unlocked: list[Node]) -> None:
-        for node in newly_unlocked:
-            if node not in self.unlocked_nodes:
-                self.unlocked_nodes.append(node)
-
-    def view_node_details(self, node_id: str) -> dict[str, Any]:
-        return self.as_state().view_node_details(node_id)
 
 
 class UserManager:

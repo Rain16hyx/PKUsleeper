@@ -45,7 +45,7 @@ class UiController:
     def refresh_common_header(self) -> None:
         """刷新所有页面共用的顶部日期栏。"""
         today = date.today()
-        self.set_button_text("dateButton", f"▣  {today.year}年{today.month}月{today.day}日  ˅")
+        self.set_button_text("dateButton", f"▣  {today.year}年{today.month}月{today.day}日")
 
     def child(self, widget_type: type[T], name: str) -> T | None:
         return self.page.findChild(widget_type, name)

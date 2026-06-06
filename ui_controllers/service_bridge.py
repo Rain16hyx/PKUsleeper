@@ -28,12 +28,6 @@ class ServiceBridge:
 
     WEEKDAYS = ["周一", "周二", "周三", "周四", "周五"]
     ALL_WEEKDAYS = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
-    MAP_NODES: tuple[dict[str, Any], ...] = (
-        {"node_id": "west", "name": "西门", "condition": "完成第 1 次睡眠打卡"},
-        {"node_id": "library", "name": "图书馆", "condition": "累计完成 2 条睡眠记录"},
-        {"node_id": "tower", "name": "博雅塔", "condition": "累计完成 4 条睡眠记录"},
-        {"node_id": "lake", "name": "未名湖", "condition": "累计完成 6 条睡眠记录"},
-    )
 
     def __init__(self, tracker: MainTracker) -> None:
         self.tracker = tracker
@@ -126,78 +120,24 @@ class ServiceBridge:
                 "avg_sleep_time": "--:--",
                 "avg_wake_time": "--:--",
                 "goal_completion_rate": 0,
-                "score": 0,
-                "record_days": 0,
-                "completed_days": 0,
-                "summary": self._empty_summary(days),
             }
 
         durations = [self._duration_hours(record) for record in records]
         completed_days = sum(1 for value in durations if value >= threshold_hours)
-        grader = SleepReportBuilder()
-        scores = [grader.calculate_sleep_quality(r) for r in records]
-        avg_score = round(sum(scores) / len(scores))
 
-        summary = self._build_period_summary(records, durations, completed_days, days)
         return {
             "avg_sleep_hours": round(sum(durations) / len(durations), 1),
             "avg_sleep_time": self._average_time_text([r.started_at for r in records], night_start=True),
             "avg_wake_time": self._average_time_text([r.ended_at for r in records]),
             "goal_completion_rate": round(completed_days / len(records) * 100),
-            "score": min(100, avg_score),
-            "record_days": len(records),
-            "completed_days": completed_days,
-            "summary": summary,
-        }
-
-    def get_goal_dashboard(self) -> dict[str, Any]:
-        goal = self._load_goal()
-        target_hours = self._goal_hours(goal)
-        week_start = date.today() - timedelta(days=date.today().weekday())
-        weekly_completion = [False] * 7
-
-        for record in self.get_recent_records(14, sleep_type=SleepType.NIGHT):
-            record_date = self.record_date(record)
-            if week_start <= record_date <= week_start + timedelta(days=6):
-                expected = (record.expected_duration_minutes or goal.target_duration_minutes) / 60
-                weekly_completion[record_date.weekday()] = self._duration_hours(record) >= expected
-
-        done = sum(weekly_completion)
-        return {
-            "target_hours": target_hours,
-            "done_days": done,
-            "total_days": 7,
-            "rate": round(done / 7 * 100),
-            "weekly_completion": weekly_completion,
         }
 
     def get_achievement_dashboard(self) -> dict[str, Any]:
         achievement_lists = self.get_achievement_lists()
         unlocked_count = len(achievement_lists["unlocked"])
-        total_count = unlocked_count + len(achievement_lists["locked"])
-        level_index = unlocked_count // 5 + 1
-        level_names = {
-            1: "作息新手",
-            2: "作息探索者",
-            3: "稳定作息家",
-            4: "梦境收藏家",
-        }
-        progress_current = unlocked_count % 5
-        next_count = 5 - progress_current
-        if total_count and unlocked_count >= total_count:
-            progress_current = 5
-            next_count = 0
         return {
             "unlocked_count": unlocked_count,
-            "total_count": total_count,
             "streak_days": self._estimate_streak_days(),
-            "points": unlocked_count * 50,
-            "level": level_index,
-            "level_name": level_names.get(level_index, "睡眠大师"),
-            "level_progress_current": progress_current,
-            "level_progress_target": 5,
-            "level_progress_rate": round(progress_current / 5 * 100),
-            "next_count": next_count,
         }
 
     def get_achievement_lists(self) -> dict[str, list[SleepAchievement]]:
@@ -284,62 +224,6 @@ class ServiceBridge:
                 return False
 
         return True
-
-    def get_map_dashboard(self) -> dict[str, Any]:
-        count = len(self.get_recent_records(9999))
-        auto_unlocked = min(len(self.MAP_NODES), 1 + count // 2) if count else 0
-        dev_map = self._load_developer_state().get("map", {})
-        manual_nodes = set(dev_map.get("unlocked_node_ids", []) or [])
-        total_count = int(dev_map.get("total_count") or len(self.MAP_NODES))
-        total_count = max(total_count, len(self.MAP_NODES), 1)
-
-        if dev_map.get("unlocked_count") is None:
-            unlocked_count = auto_unlocked
-        else:
-            unlocked_count = int(dev_map.get("unlocked_count") or 0)
-        unlocked_count = max(0, min(unlocked_count, len(self.MAP_NODES)))
-
-        unlocked_ids = {
-            node["node_id"]
-            for node in self.MAP_NODES[:unlocked_count]
-        }
-        unlocked_ids.update(
-            node["node_id"]
-            for node in self.MAP_NODES
-            if node["node_id"] in manual_nodes or node["name"] in manual_nodes
-        )
-
-        recommended_node = dev_map.get("recommended_node") or ""
-        if not recommended_node:
-            next_node = next(
-                (node for node in self.MAP_NODES if node["node_id"] not in unlocked_ids),
-                self.MAP_NODES[-1],
-            )
-            recommended_node = next_node["name"]
-
-        nodes = []
-        for node in self.MAP_NODES:
-            is_recommended = recommended_node in (node["node_id"], node["name"])
-            nodes.append(
-                {
-                    **node,
-                    "unlocked": node["node_id"] in unlocked_ids,
-                    "recommended": is_recommended,
-                }
-            )
-
-        recommended_info = next(
-            (node for node in nodes if node["recommended"]),
-            nodes[-1],
-        )
-
-        return {
-            "unlocked_count": min(max(unlocked_count, len(unlocked_ids)), total_count),
-            "total_count": total_count,
-            "recommended_node": recommended_info["name"],
-            "recommended_condition": recommended_info["condition"],
-            "nodes": nodes,
-        }
 
     def upload_timetable(self, file_path: str) -> bool:
         try:
@@ -529,12 +413,6 @@ class ServiceBridge:
             return repository.load_developer_state()
         return {
             "achievement": {"unlocked_ids": [], "locked_ids": []},
-            "map": {
-                "unlocked_node_ids": [],
-                "unlocked_count": None,
-                "total_count": 4,
-                "recommended_node": None,
-            },
         }
 
     @staticmethod
@@ -549,41 +427,6 @@ class ServiceBridge:
         except Exception:  # noqa: BLE001
             hours = self._duration_hours(record)
             return f"本次睡眠 {hours:.1f} 小时，记录已保存。"
-
-    def _build_period_summary(
-        self,
-        records: list[SleepRecord],
-        durations: list[float],
-        completed_days: int,
-        days: int,
-    ) -> list[tuple[str, str]]:
-        avg_duration = round(sum(durations) / len(durations), 1)
-        rate = round(completed_days / len(records) * 100)
-
-        if avg_duration >= 8:
-            duration_text = f"平均睡眠 {avg_duration:.1f} 小时，睡眠时长比较充足。"
-        elif avg_duration >= 7:
-            duration_text = f"平均睡眠 {avg_duration:.1f} 小时，整体接近目标。"
-        else:
-            duration_text = f"平均睡眠 {avg_duration:.1f} 小时，建议优先补足夜间睡眠。"
-
-        if rate >= 80:
-            goal_text = f"本期达标率 {rate}%，目标完成情况很好。"
-        elif rate >= 50:
-            goal_text = f"本期达标率 {rate}%，仍有提升空间。"
-        else:
-            goal_text = f"本期达标率 {rate}%，可以先从固定入睡时间开始。"
-
-        record_text = f"最近 {days} 天内有 {len(records)} 条夜间睡眠记录。"
-        return [("记录覆盖", record_text), ("时长表现", duration_text), ("目标完成", goal_text)]
-
-    @staticmethod
-    def _empty_summary(days: int) -> list[tuple[str, str]]:
-        return [
-            ("记录覆盖", f"最近 {days} 天暂无夜间睡眠记录。"),
-            ("时长表现", "完成一次睡眠打卡后即可生成趋势分析。"),
-            ("目标完成", "暂无数据时，本周完成圆点保持未点亮。"),
-        ]
 
     def _estimate_streak_days(self) -> int:
         records = self.get_recent_records(9999, sleep_type=SleepType.NIGHT)

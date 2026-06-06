@@ -111,6 +111,7 @@ class SleepRecordRepository:
                 target_duration_minutes=data.get("target_duration_minutes", 480),
                 expected_sleep_start_time=start_time,
                 difficulty_level=data.get("difficulty_level", 1),
+                nap_target_minutes=data.get("nap_target_minutes", 30),
             )
         except Exception as exc:
             print(f"用户 {self.user_id} 读取当前睡眠目标失败，降级使用默认值: {exc}")
@@ -127,6 +128,7 @@ class SleepRecordRepository:
             if goal.expected_sleep_start_time
             else "",
             "difficulty_level": goal.difficulty_level,
+            "nap_target_minutes": getattr(goal, "nap_target_minutes", 30),
         }
 
         try:
@@ -176,17 +178,13 @@ class SleepRecordRepository:
                 "unlocked_ids": [],
                 "locked_ids": [],
             },
-            "map": {
-                "unlocked_node_ids": [],
-                "unlocked_count": None,
-                "total_count": 4,
-                "recommended_node": None,
-            },
         }
 
     @staticmethod
     def _merge_state(target: dict[str, Any], source: dict[str, Any]) -> None:
         for key, value in source.items():
+            if key not in target:
+                continue
             if isinstance(target.get(key), dict) and isinstance(value, dict):
                 target[key].update(value)
             else:

@@ -31,20 +31,13 @@ C:\Users\hyx20\miniconda3\envs\pkusleeper\python.exe dev_commands.py goal set --
 C:\Users\hyx20\miniconda3\envs\pkusleeper\python.exe dev_commands.py goal reset
 ```
 
-## 成就和地图
+## 睡眠成就
 
 ```powershell
-# 成就
 C:\Users\hyx20\miniconda3\envs\pkusleeper\python.exe dev_commands.py achievement list
 C:\Users\hyx20\miniconda3\envs\pkusleeper\python.exe dev_commands.py achievement unlock sleep_8h
 C:\Users\hyx20\miniconda3\envs\pkusleeper\python.exe dev_commands.py achievement lock sleep_8h
 C:\Users\hyx20\miniconda3\envs\pkusleeper\python.exe dev_commands.py achievement clear
-
-# 地图
-C:\Users\hyx20\miniconda3\envs\pkusleeper\python.exe dev_commands.py map show
-C:\Users\hyx20\miniconda3\envs\pkusleeper\python.exe dev_commands.py map set --unlocked-count 3 --recommended-node 图书馆
-C:\Users\hyx20\miniconda3\envs\pkusleeper\python.exe dev_commands.py map unlock-node library
-C:\Users\hyx20\miniconda3\envs\pkusleeper\python.exe dev_commands.py map clear
 ```
 
 当前可用成就 ID：
@@ -67,7 +60,7 @@ week_logger       一周有迹
 steady_week       稳定作息周
 ```
 
-成就和地图的手动状态保存在 `data/<user_id>/dev_state.json`。清除全部手动覆盖：
+成就手动状态保存在 `data/<user_id>/dev_state.json`。清除全部手动覆盖：
 
 ```powershell
 C:\Users\hyx20\miniconda3\envs\pkusleeper\python.exe dev_commands.py state reset

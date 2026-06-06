@@ -23,12 +23,12 @@
    <string notr="true">#Form {
     background: #fffdf9;
     color: #25252a;
-    font-family: "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+    font-family: &quot;Microsoft YaHei UI&quot;, &quot;Microsoft YaHei&quot;, sans-serif;
 }
 
 QLabel {
     color: #28272c;
-    font-family: "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+    font-family: &quot;Microsoft YaHei UI&quot;, &quot;Microsoft YaHei&quot;, sans-serif;
 }
 
 #titleLabel {
@@ -282,7 +282,7 @@ QLabel {
      <item>
       <widget class="QPushButton" name="dateButton">
        <property name="text">
-        <string>▣  2024年5月21日  ˅</string>
+        <string>▣  2024年5月21日</string>
        </property>
       </widget>
      </item>
@@ -416,75 +416,300 @@ QLabel {
       <item>
        <widget class="QFrame" name="recordRow">
         <layout class="QGridLayout" name="recordRowLayout">
-         <property name="horizontalSpacing"><number>24</number></property>
-         <property name="leftMargin"><number>18</number></property>
-         <property name="rightMargin"><number>18</number></property>
-         <item row="0" column="0"><widget class="QLabel" name="moonIcon"><property name="text"><string>☾</string></property></widget></item>
-         <item row="0" column="1"><widget class="QLabel" name="dateText"><property name="text"><string>05/21（周二）</string></property></widget></item>
-         <item row="0" column="2"><widget class="QLabel" name="durationText"><property name="text"><string>7.2 小时</string></property></widget></item>
-         <item row="0" column="3"><widget class="QLabel" name="timeText"><property name="text"><string>23:35 - 07:00</string></property></widget></item>
-         <item row="0" column="4"><widget class="QLabel" name="scoreBadge"><property name="text"><string>84 分</string></property><property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property></widget></item>
-         <item row="0" column="5"><widget class="QPushButton" name="reportButton"><property name="text"><string>查看报告</string></property></widget></item>
+         <property name="leftMargin">
+          <number>18</number>
+         </property>
+         <property name="rightMargin">
+          <number>18</number>
+         </property>
+         <property name="horizontalSpacing">
+          <number>24</number>
+         </property>
+         <item row="0" column="0">
+          <widget class="QLabel" name="moonIcon">
+           <property name="text">
+            <string>☾</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLabel" name="dateText">
+           <property name="text">
+            <string>05/21（周二）</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QLabel" name="durationText">
+           <property name="text">
+            <string>7.2 小时</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
+          <widget class="QLabel" name="timeText">
+           <property name="text">
+            <string>23:35 - 07:00</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="4">
+          <widget class="QLabel" name="scoreBadge">
+           <property name="text">
+            <string>84 分</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignmentFlag::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="5">
+          <widget class="QPushButton" name="reportButton">
+           <property name="text">
+            <string>查看报告</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
       </item>
       <item>
        <widget class="QFrame" name="recordRow_2">
         <layout class="QGridLayout" name="recordRowLayout_2">
-         <property name="horizontalSpacing"><number>24</number></property>
-         <property name="leftMargin"><number>18</number></property>
-         <property name="rightMargin"><number>18</number></property>
-         <item row="0" column="0"><widget class="QLabel" name="moonIcon_2"><property name="text"><string>☾</string></property></widget></item>
-         <item row="0" column="1"><widget class="QLabel" name="dateText_2"><property name="text"><string>05/20（周一）</string></property></widget></item>
-         <item row="0" column="2"><widget class="QLabel" name="durationText_2"><property name="text"><string>7.0 小时</string></property></widget></item>
-         <item row="0" column="3"><widget class="QLabel" name="timeText_2"><property name="text"><string>23:30 - 06:45</string></property></widget></item>
-         <item row="0" column="4"><widget class="QLabel" name="scoreBadge_2"><property name="text"><string>81 分</string></property><property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property></widget></item>
-         <item row="0" column="5"><widget class="QPushButton" name="reportButton_2"><property name="text"><string>查看报告</string></property></widget></item>
+         <property name="leftMargin">
+          <number>18</number>
+         </property>
+         <property name="rightMargin">
+          <number>18</number>
+         </property>
+         <property name="horizontalSpacing">
+          <number>24</number>
+         </property>
+         <item row="0" column="0">
+          <widget class="QLabel" name="moonIcon_2">
+           <property name="text">
+            <string>☾</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLabel" name="dateText_2">
+           <property name="text">
+            <string>05/20（周一）</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QLabel" name="durationText_2">
+           <property name="text">
+            <string>7.0 小时</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
+          <widget class="QLabel" name="timeText_2">
+           <property name="text">
+            <string>23:30 - 06:45</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="4">
+          <widget class="QLabel" name="scoreBadge_2">
+           <property name="text">
+            <string>81 分</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignmentFlag::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="5">
+          <widget class="QPushButton" name="reportButton_2">
+           <property name="text">
+            <string>查看报告</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
       </item>
       <item>
        <widget class="QFrame" name="recordRow_3">
         <layout class="QGridLayout" name="recordRowLayout_3">
-         <property name="horizontalSpacing"><number>24</number></property>
-         <property name="leftMargin"><number>18</number></property>
-         <property name="rightMargin"><number>18</number></property>
-         <item row="0" column="0"><widget class="QLabel" name="moonIcon_3"><property name="text"><string>☾</string></property></widget></item>
-         <item row="0" column="1"><widget class="QLabel" name="dateText_3"><property name="text"><string>05/19（周日）</string></property></widget></item>
-         <item row="0" column="2"><widget class="QLabel" name="durationText_3"><property name="text"><string>7.8 小时</string></property></widget></item>
-         <item row="0" column="3"><widget class="QLabel" name="timeText_3"><property name="text"><string>23:20 - 07:00</string></property></widget></item>
-         <item row="0" column="4"><widget class="QLabel" name="scoreBadge_3"><property name="text"><string>88 分</string></property><property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property></widget></item>
-         <item row="0" column="5"><widget class="QPushButton" name="reportButton_3"><property name="text"><string>查看报告</string></property></widget></item>
+         <property name="leftMargin">
+          <number>18</number>
+         </property>
+         <property name="rightMargin">
+          <number>18</number>
+         </property>
+         <property name="horizontalSpacing">
+          <number>24</number>
+         </property>
+         <item row="0" column="0">
+          <widget class="QLabel" name="moonIcon_3">
+           <property name="text">
+            <string>☾</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLabel" name="dateText_3">
+           <property name="text">
+            <string>05/19（周日）</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QLabel" name="durationText_3">
+           <property name="text">
+            <string>7.8 小时</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
+          <widget class="QLabel" name="timeText_3">
+           <property name="text">
+            <string>23:20 - 07:00</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="4">
+          <widget class="QLabel" name="scoreBadge_3">
+           <property name="text">
+            <string>88 分</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignmentFlag::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="5">
+          <widget class="QPushButton" name="reportButton_3">
+           <property name="text">
+            <string>查看报告</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
       </item>
       <item>
        <widget class="QFrame" name="recordRow_4">
         <layout class="QGridLayout" name="recordRowLayout_4">
-         <property name="horizontalSpacing"><number>24</number></property>
-         <property name="leftMargin"><number>18</number></property>
-         <property name="rightMargin"><number>18</number></property>
-         <item row="0" column="0"><widget class="QLabel" name="moonIcon_4"><property name="text"><string>☾</string></property></widget></item>
-         <item row="0" column="1"><widget class="QLabel" name="dateText_4"><property name="text"><string>05/18（周六）</string></property></widget></item>
-         <item row="0" column="2"><widget class="QLabel" name="durationText_4"><property name="text"><string>7.0 小时</string></property></widget></item>
-         <item row="0" column="3"><widget class="QLabel" name="timeText_4"><property name="text"><string>23:40 - 06:50</string></property></widget></item>
-         <item row="0" column="4"><widget class="QLabel" name="scoreBadge_4"><property name="text"><string>82 分</string></property><property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property></widget></item>
-         <item row="0" column="5"><widget class="QPushButton" name="reportButton_4"><property name="text"><string>查看报告</string></property></widget></item>
+         <property name="leftMargin">
+          <number>18</number>
+         </property>
+         <property name="rightMargin">
+          <number>18</number>
+         </property>
+         <property name="horizontalSpacing">
+          <number>24</number>
+         </property>
+         <item row="0" column="0">
+          <widget class="QLabel" name="moonIcon_4">
+           <property name="text">
+            <string>☾</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLabel" name="dateText_4">
+           <property name="text">
+            <string>05/18（周六）</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QLabel" name="durationText_4">
+           <property name="text">
+            <string>7.0 小时</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
+          <widget class="QLabel" name="timeText_4">
+           <property name="text">
+            <string>23:40 - 06:50</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="4">
+          <widget class="QLabel" name="scoreBadge_4">
+           <property name="text">
+            <string>82 分</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignmentFlag::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="5">
+          <widget class="QPushButton" name="reportButton_4">
+           <property name="text">
+            <string>查看报告</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
       </item>
       <item>
        <widget class="QFrame" name="recordRow_5">
         <layout class="QGridLayout" name="recordRowLayout_5">
-         <property name="horizontalSpacing"><number>24</number></property>
-         <property name="leftMargin"><number>18</number></property>
-         <property name="rightMargin"><number>18</number></property>
-         <item row="0" column="0"><widget class="QLabel" name="moonIcon_5"><property name="text"><string>☾</string></property></widget></item>
-         <item row="0" column="1"><widget class="QLabel" name="dateText_5"><property name="text"><string>05/17（周五）</string></property></widget></item>
-         <item row="0" column="2"><widget class="QLabel" name="durationText_5"><property name="text"><string>6.3 小时</string></property></widget></item>
-         <item row="0" column="3"><widget class="QLabel" name="timeText_5"><property name="text"><string>00:10 - 06:30</string></property></widget></item>
-         <item row="0" column="4"><widget class="QLabel" name="scoreBadge_5"><property name="text"><string>73 分</string></property><property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property></widget></item>
-         <item row="0" column="5"><widget class="QPushButton" name="reportButton_5"><property name="text"><string>查看报告</string></property></widget></item>
+         <property name="leftMargin">
+          <number>18</number>
+         </property>
+         <property name="rightMargin">
+          <number>18</number>
+         </property>
+         <property name="horizontalSpacing">
+          <number>24</number>
+         </property>
+         <item row="0" column="0">
+          <widget class="QLabel" name="moonIcon_5">
+           <property name="text">
+            <string>☾</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLabel" name="dateText_5">
+           <property name="text">
+            <string>05/17（周五）</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QLabel" name="durationText_5">
+           <property name="text">
+            <string>6.3 小时</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
+          <widget class="QLabel" name="timeText_5">
+           <property name="text">
+            <string>00:10 - 06:30</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="4">
+          <widget class="QLabel" name="scoreBadge_5">
+           <property name="text">
+            <string>73 分</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignmentFlag::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="5">
+          <widget class="QPushButton" name="reportButton_5">
+           <property name="text">
+            <string>查看报告</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
       </item>
@@ -510,9 +735,27 @@ QLabel {
           </property>
          </spacer>
         </item>
-        <item><widget class="QPushButton" name="pageButton"><property name="text"><string>‹</string></property></widget></item>
-        <item><widget class="QPushButton" name="pageButton_2"><property name="text"><string>1</string></property></widget></item>
-        <item><widget class="QPushButton" name="pageButton_3"><property name="text"><string>›</string></property></widget></item>
+        <item>
+         <widget class="QPushButton" name="pageButton">
+          <property name="text">
+           <string>‹</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pageButton_2">
+          <property name="text">
+           <string>1</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pageButton_3">
+          <property name="text">
+           <string>›</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
      </layout>

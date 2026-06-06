@@ -5,7 +5,6 @@
     python dev_commands.py records list
     python dev_commands.py goal set --hours 7.5 --start 23:45
     python dev_commands.py achievement unlock sleep_8h
-    python dev_commands.py map set --unlocked-count 3 --recommended-node 图书馆
 """
 
 from __future__ import annotations
@@ -43,7 +42,6 @@ def build_parser() -> argparse.ArgumentParser:
     add_record_commands(subparsers)
     add_goal_commands(subparsers)
     add_achievement_commands(subparsers)
-    add_map_commands(subparsers)
     add_state_commands(subparsers)
     return parser
 
@@ -109,31 +107,6 @@ def add_achievement_commands(subparsers) -> None:
 
     clear_parser = achievement_sub.add_parser("clear", help="清除成就手动覆盖")
     clear_parser.set_defaults(func=cmd_achievement_clear)
-
-
-def add_map_commands(subparsers) -> None:
-    map_parser = subparsers.add_parser("map", help="修改地图调试状态")
-    map_sub = map_parser.add_subparsers(dest="action", required=True)
-
-    show_parser = map_sub.add_parser("show", help="显示地图调试状态")
-    show_parser.set_defaults(func=cmd_map_show)
-
-    set_parser = map_sub.add_parser("set", help="设置地图状态")
-    set_parser.add_argument("--unlocked-count", type=int, default=None)
-    set_parser.add_argument("--total-count", type=int, default=None)
-    set_parser.add_argument("--recommended-node", default=None)
-    set_parser.set_defaults(func=cmd_map_set)
-
-    unlock_parser = map_sub.add_parser("unlock-node", help="手动解锁地图节点")
-    unlock_parser.add_argument("node_id")
-    unlock_parser.set_defaults(func=cmd_map_unlock_node)
-
-    lock_parser = map_sub.add_parser("lock-node", help="手动锁定地图节点")
-    lock_parser.add_argument("node_id")
-    lock_parser.set_defaults(func=cmd_map_lock_node)
-
-    clear_parser = map_sub.add_parser("clear", help="清除地图手动状态")
-    clear_parser.set_defaults(func=cmd_map_clear)
 
 
 def add_state_commands(subparsers) -> None:
@@ -290,53 +263,6 @@ def cmd_achievement_clear(repo: SleepRecordRepository, args: argparse.Namespace)
     state["achievement"] = {"unlocked_ids": [], "locked_ids": []}
     repo.save_developer_state(state)
     print("已清除成就手动覆盖。")
-
-
-def cmd_map_show(repo: SleepRecordRepository, args: argparse.Namespace) -> None:
-    map_state = repo.load_developer_state()["map"]
-    print(f"已解锁节点：{map_state['unlocked_node_ids']}")
-    print(f"解锁数量覆盖：{map_state['unlocked_count']}")
-    print(f"总节点数：{map_state['total_count']}")
-    print(f"推荐节点：{map_state['recommended_node']}")
-
-
-def cmd_map_set(repo: SleepRecordRepository, args: argparse.Namespace) -> None:
-    state = repo.load_developer_state()
-    map_state = state["map"]
-    if args.unlocked_count is not None:
-        map_state["unlocked_count"] = args.unlocked_count
-    if args.total_count is not None:
-        map_state["total_count"] = args.total_count
-    if args.recommended_node is not None:
-        map_state["recommended_node"] = args.recommended_node
-    repo.save_developer_state(state)
-    print("地图状态已更新。")
-
-
-def cmd_map_unlock_node(repo: SleepRecordRepository, args: argparse.Namespace) -> None:
-    state = repo.load_developer_state()
-    add_unique(state["map"]["unlocked_node_ids"], args.node_id)
-    repo.save_developer_state(state)
-    print(f"已手动解锁地图节点：{args.node_id}")
-
-
-def cmd_map_lock_node(repo: SleepRecordRepository, args: argparse.Namespace) -> None:
-    state = repo.load_developer_state()
-    remove_value(state["map"]["unlocked_node_ids"], args.node_id)
-    repo.save_developer_state(state)
-    print(f"已手动锁定地图节点：{args.node_id}")
-
-
-def cmd_map_clear(repo: SleepRecordRepository, args: argparse.Namespace) -> None:
-    state = repo.load_developer_state()
-    state["map"] = {
-        "unlocked_node_ids": [],
-        "unlocked_count": None,
-        "total_count": 4,
-        "recommended_node": None,
-    }
-    repo.save_developer_state(state)
-    print("已清除地图手动状态。")
 
 
 def cmd_state_show(repo: SleepRecordRepository, args: argparse.Namespace) -> None:

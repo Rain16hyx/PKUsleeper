@@ -19,7 +19,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMessageBox,
-    QProgressBar,
     QPushButton,
     QScrollArea,
     QSizePolicy,
@@ -72,7 +71,6 @@ class HomeController(UiController):
         self.connect_button("pushButton_8", self.toggle_sleep)
         self.connect_button("pushButton_2", lambda: self.navigate("analysis"))
         self.connect_button("pushButton_3", lambda: self.navigate("planning"))
-        self.connect_button("pushButton_4", lambda: self.navigate("sleepmap"))
         self.connect_button("pushButton_5", lambda: self.navigate("goal"))
         self.connect_button("pushButton_6", lambda: self.navigate("analysis"))
         self.connect_button("pushButton_7", lambda: self.navigate("achievement"))
@@ -322,11 +320,6 @@ class AnalysisController(UiController):
         self.set_label_text("statValue_2", dashboard.get("avg_sleep_time", "--:--"))
         self.set_label_text("statValue_3", dashboard.get("avg_wake_time", "--:--"))
         self.set_label_text("statValue_4", str(dashboard.get("goal_completion_rate", 0)))
-        self.set_label_text("ringLabel", f"{dashboard.get('record_days', 0)} 天")
-        self.set_label_text("ringLabel_2", f"{dashboard.get('score', 0)}\n分")
-        self.set_label_text("ringLabel_3", f"{dashboard.get('completed_days', 0)}/{self.current_days}")
-        self.set_label_text("qualityHint", f"达标标准：睡眠时长不少于 {self._goal_hours():.1f} 小时")
-        self._render_summary(dashboard.get("summary", []))
 
         if self.current_days == 7:
             self._draw_7_days_charts(raw_records)
@@ -464,23 +457,6 @@ class AnalysisController(UiController):
             item.enableAutoRange(False)
             plot.getAxis("left").setTicks(None)
             plot.getAxis("bottom").setTicks(None)
-
-    def _render_summary(self, summary: list[tuple[str, str]]) -> None:
-        defaults = [
-            ("记录覆盖", "暂无记录。"),
-            ("时长表现", "完成打卡后生成分析。"),
-            ("目标完成", "暂无达标数据。"),
-        ]
-        rows = summary[:3] if summary else defaults
-        rows += defaults[len(rows) :]
-
-        for idx, (title, text) in enumerate(rows[:3], start=1):
-            suffix = "" if idx == 1 else f"_{idx}"
-            self.set_label_text(f"summaryTitle{suffix}", title)
-            self.set_label_text(f"summaryText{suffix}", text)
-            label = self.label(f"summaryText{suffix}")
-            if label is not None:
-                label.setWordWrap(True)
 
     def _update_range_style(self) -> None:
         btn7 = self.button("rangeButton")
@@ -669,114 +645,12 @@ class PlanningController(UiController):
             )
 
 
-class SleepMapController(UiController):
-    NODE_BUTTONS = {
-        "west": "pushButton",
-        "library": "pushButton_4",
-        "tower": "pushButton_2",
-        "lake": "pushButton_5",
-    }
-
-    NODE_BUTTON_BASE_STYLE = (
-        "min-width: 78px; max-width: 96px; min-height: 30px; max-height: 30px; "
-        "border-radius: 8px; font-size: 14px; font-weight: 800; padding: 0 10px;"
-    )
-    NODE_BUTTON_STYLES = {
-        "recommended": (
-            NODE_BUTTON_BASE_STYLE +
-            "border: 1px solid #b8151d; "
-            "background: #b8151d; color: #ffffff;"
-        ),
-        "unlocked": (
-            NODE_BUTTON_BASE_STYLE +
-            "border: 1px solid #d8bda1; "
-            "background: #fffefd; color: #9a121a;"
-        ),
-        "locked": (
-            NODE_BUTTON_BASE_STYLE +
-            "border: 1px solid #e8c07f; "
-            "background: #f3cf92; color: #744c12;"
-        ),
-    }
-    NODE_BUTTON_TEXT = {
-        "recommended": "推荐",
-        "unlocked": "已解锁",
-        "locked": "待解锁",
-    }
-
-    def bind_events(self) -> None:
-        for node_id, button_name in self.NODE_BUTTONS.items():
-            button = self.button(button_name)
-            if button is None:
-                continue
-            button.setCursor(Qt.PointingHandCursor)
-            button.clicked.connect(
-                lambda _checked=False, current_node=node_id: self._show_node_condition(current_node)
-            )
-
-    def refresh(self) -> None:
-        data = self.bridge.get_map_dashboard()
-        self.set_label_text("label_2", f"已解锁 {data['unlocked_count']} / {data['total_count']} 个地标")
-        self.set_label_text("recommendPlace", data["recommended_node"])
-        self.set_label_text("recommendDesc", f"下一节点条件：{data.get('recommended_condition', '--')}")
-        self._node_data = {node["node_id"]: node for node in data.get("nodes", [])}
-
-        for node in data.get("nodes", []):
-            self._render_node_button(node)
-
-    def _render_node_button(self, node: dict[str, object]) -> None:
-        node_id = str(node["node_id"])
-        button_name = self.NODE_BUTTONS.get(node_id)
-        if button_name is None:
-            return
-
-        button = self.button(button_name)
-        if button is None:
-            return
-
-        state = self._node_state(node)
-        button.setText(self.NODE_BUTTON_TEXT[state])
-        button.setStyleSheet(self.NODE_BUTTON_STYLES[state])
-
-    @staticmethod
-    def _node_state(node: dict[str, object]) -> str:
-        if node.get("recommended"):
-            return "recommended"
-        if node.get("unlocked"):
-            return "unlocked"
-        return "locked"
-
-    def _show_node_condition(self, node_id: str) -> None:
-        node_data = getattr(self, "_node_data", None)
-        if not node_data:
-            data = self.bridge.get_map_dashboard()
-            node_data = {node["node_id"]: node for node in data.get("nodes", [])}
-            self._node_data = node_data
-
-        node = node_data.get(node_id)
-        if node is None:
-            return
-
-        status = {
-            "recommended": "当前推荐",
-            "unlocked": "已解锁",
-            "locked": "待解锁",
-        }[self._node_state(node)]
-
-        QMessageBox.information(
-            self.page,
-            str(node["name"]),
-            f"解锁条件：{node['condition']}\n当前状态：{status}",
-        )
-
-
 class GoalController(UiController):
-    DOT_NAMES = ["doneDot", "doneDot_2", "doneDot_3", "doneDot_4", "doneDot_5", "emptyDot", "emptyDot_2"]
-
     def bind_events(self) -> None:
         self._bind_clickable_row("settingRow", self._on_change_duration)
         self._bind_clickable_row("settingRow_2", self._on_change_start_time)
         self._bind_clickable_row("settingRow_3", self._on_change_wake_time)
+        self._bind_clickable_row("settingRow_4", self._on_change_nap_duration)
         self.connect_button("saveButton", self._on_save_goal)
 
     def refresh(self) -> None:
@@ -792,15 +666,7 @@ class GoalController(UiController):
         self.set_label_text("settingValue", f"{hours:.1f} 小时")
         self.set_label_text("settingValue_2", start_str)
         self.set_label_text("settingValue_3", wake_str)
-
-        dashboard = self.bridge.get_goal_dashboard()
-        self.set_label_text("weekTextStrong", f"{dashboard['done_days']} / {dashboard['total_days']} 天")
-        self.set_label_text("percentLabel", f"{dashboard['rate']}%")
-
-        progress_bar = self.page.findChild(QProgressBar, "progressBar")
-        if progress_bar is not None:
-            progress_bar.setValue(dashboard["rate"])
-        self._update_week_dots(dashboard.get("weekly_completion", [False] * 7))
+        self.set_label_text("toggleTrack", self._nap_text(getattr(goal, "nap_target_minutes", 30)))
 
     def _on_change_duration(self) -> None:
         current_val = self._duration_from_label()
@@ -834,6 +700,19 @@ class GoalController(UiController):
         self._refresh_duration_from_wake()
         self._sync_current_goal_preview()
 
+    def _on_change_nap_duration(self) -> None:
+        value, ok = QInputDialog.getInt(
+            self.page,
+            "设置午休目标",
+            "请输入午休目标时长（分钟，0 表示不设置）：",
+            self._nap_minutes_from_label(),
+            0,
+            120,
+            5,
+        )
+        if ok:
+            self.set_label_text("toggleTrack", self._nap_text(value))
+
     def _on_save_goal(self) -> None:
         try:
             hours = self._duration_from_label()
@@ -843,6 +722,7 @@ class GoalController(UiController):
                 target_duration_minutes=int(hours * 60),
                 expected_sleep_start_time=parsed_time,
                 difficulty_level=1,
+                nap_target_minutes=self._nap_minutes_from_label(),
             )
 
             self.bridge.tracker.goal_manager.sleep_goal = new_goal
@@ -874,6 +754,16 @@ class GoalController(UiController):
         text = label.text() if label is not None else "8.0"
         match = re.search(r"\d+(?:\.\d+)?", text)
         return float(match.group(0)) if match else 8.0
+
+    def _nap_minutes_from_label(self) -> int:
+        label = self.label("toggleTrack")
+        text = label.text() if label is not None else "30"
+        match = re.search(r"\d+", text)
+        return int(match.group(0)) if match else 0
+
+    @staticmethod
+    def _nap_text(minutes: int) -> str:
+        return "不设置" if minutes <= 0 else f"{minutes} 分钟"
 
     def _refresh_wake_preview(self) -> None:
         start_dt = self._start_datetime_from_label()
@@ -931,24 +821,6 @@ class GoalController(UiController):
             wake_dt += timedelta(days=1)
         return wake_dt
 
-    def _update_week_dots(self, completion: list[bool]) -> None:
-        lit_style = (
-            "min-width: 42px; min-height: 42px; border-radius: 21px; "
-            "background: #b8151d; color: #ffffff; font-size: 24px; font-weight: 900;"
-        )
-        empty_style = (
-            "min-width: 42px; min-height: 42px; border: 1px dashed #cdb9aa; "
-            "border-radius: 21px; background: #fffefd; color: #cdb9aa;"
-        )
-        for idx, name in enumerate(self.DOT_NAMES):
-            label = self.label(name)
-            if label is None:
-                continue
-            done = idx < len(completion) and completion[idx]
-            label.setText("✓" if done else "")
-            label.setAlignment(Qt.AlignCenter)
-            label.setStyleSheet(lit_style if done else empty_style)
-
     @staticmethod
     def _time_text(value: datetime | None) -> str:
         return value.strftime("%H:%M") if value else "--:--"
@@ -965,22 +837,6 @@ class AchievementController(UiController):
         data = self.bridge.get_achievement_dashboard()
         self.set_label_text("statValue", str(data["unlocked_count"]))
         self.set_label_text("statValue_2", str(data["streak_days"]))
-        self.set_label_text("statValue_3", str(data["points"]))
-        self.set_label_text("levelValue", f"Lv.{data['level']}")
-        self.set_label_text("levelName", data["level_name"])
-        self.set_label_text("nextCount", str(data["next_count"]))
-        self.set_label_text("progressText", f"{data['level_progress_current']} / {data['level_progress_target']}")
-
-        if data["next_count"] == 0:
-            self.set_label_text("nextDesc", "已完成当前成就目录")
-            self.set_label_text("nextDesc_2", "个成就")
-        else:
-            self.set_label_text("nextDesc", "距离下一等级还差")
-            self.set_label_text("nextDesc_2", "个成就")
-
-        progress_bar = self.page.findChild(QProgressBar, "levelProgress")
-        if progress_bar is not None:
-            progress_bar.setValue(data["level_progress_rate"])
 
         achievement_data = self.bridge.get_achievement_lists()
         unlocked_layout = self.page.findChild(QVBoxLayout, "unlockedAchievementsLayout")

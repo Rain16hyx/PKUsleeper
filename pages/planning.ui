@@ -295,7 +295,7 @@ QLabel {
      <item>
       <widget class="QPushButton" name="dateButton">
        <property name="text">
-        <string>▣  2024年5月21日  ˅</string>
+        <string>▣  2024年5月21日</string>
        </property>
       </widget>
      </item>

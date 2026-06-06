@@ -87,6 +87,7 @@ class SleepGoal:
     target_duration_minutes: int
     expected_sleep_start_time: datetime
     difficulty_level: int
+    nap_target_minutes: int = 30
 
     def fulfilled_by(self, record: SleepRecord) -> bool:
         """Return whether this record satisfies the goal condition."""
@@ -147,15 +148,3 @@ class SleepAchievement:
                 return False
         
         return True
-
-
-@dataclass(slots=True)
-class Node:
-    node_id: str
-    name: str
-    description: str
-    demands: dict[str, Any]
-
-    def unlocked_by(self, record: SleepRecord) -> bool:
-        """Return whether this record satisfies the node unlocking condition."""
-        raise NotImplementedError

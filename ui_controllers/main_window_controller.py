@@ -24,7 +24,6 @@ from ui_controllers.page_controllers import (
     PlanningController,
     ProfileController,
     RecordsController,
-    SleepMapController,
 )
 from ui_controllers.service_bridge import ServiceBridge
 
@@ -37,7 +36,6 @@ class MainWindowController:
         ("records", "records.ui", RecordsController),
         ("analysis", "analysis.ui", AnalysisController),
         ("planning", "planning.ui", PlanningController),
-        ("sleepmap", "sleepmap.ui", SleepMapController),
         ("goal", "goal.ui", GoalController),
         ("achievement", "achievement.ui", AchievementController),
     )
@@ -47,7 +45,6 @@ class MainWindowController:
         "pushButton_2": "records",
         "pushButton_3": "analysis",
         "pushButton_4": "planning",
-        "pushButton_5": "sleepmap",
         "pushButton_6": "goal",
         "pushButton_7": "achievement",
         "pushButton_8": "profile",
