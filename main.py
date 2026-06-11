@@ -7,11 +7,11 @@ from pathlib import Path
 
 from PySide6.QtWidgets import QApplication
 
-from achievement_catalog import build_default_achievements
-from service import MainTracker
-from storage import SleepRecordRepository
-from ui_controllers import MainWindowController
-from utils.data_processing import SleepReportBuilder
+from pkusleeper.achievements.catalog import build_default_achievements
+from pkusleeper.services import MainTracker
+from pkusleeper.storage import SleepRecordRepository
+from pkusleeper.ui import MainWindowController
+from pkusleeper.reports import SleepReportBuilder
 
 
 def main() -> int:
