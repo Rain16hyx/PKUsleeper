@@ -337,7 +337,7 @@ def cmd_map_clear(repo: SleepRecordRepository, args: argparse.Namespace) -> None
     state["map"] = {
         "unlocked_node_ids": [],
         "unlocked_count": None,
-        "total_count": 4,
+        "total_count": 8,
         "recommended_node": None,
     }
     repo.save_developer_state(state)

@@ -31,10 +31,71 @@ class ServiceBridge(
     WEEKDAYS = ["周一", "周二", "周三", "周四", "周五"]
     ALL_WEEKDAYS = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
     MAP_NODES: tuple[dict[str, Any], ...] = (
-        {"node_id": "west", "name": "西门", "condition": "完成第 1 次睡眠打卡"},
-        {"node_id": "library", "name": "图书馆", "condition": "累计完成 2 条睡眠记录"},
-        {"node_id": "tower", "name": "博雅塔", "condition": "累计完成 4 条睡眠记录"},
-        {"node_id": "lake", "name": "未名湖", "condition": "累计完成 6 条睡眠记录"},
+        {
+            "node_id": "red_building",
+            "name": "红楼",
+            "short_name": "红楼",
+            "required_records": 2,
+            "min_total_hours": 10,
+        },
+        {
+            "node_id": "west",
+            "name": "西校门",
+            "short_name": "西校门",
+            "required_records": 4,
+            "night_records": 3,
+            "min_total_hours": 22,
+        },
+        {
+            "node_id": "stone_boat",
+            "name": "石舫",
+            "short_name": "石舫",
+            "required_records": 7,
+            "nap_records": 1,
+            "min_total_hours": 40,
+        },
+        {
+            "node_id": "tower",
+            "name": "博雅塔",
+            "short_name": "博雅塔",
+            "required_records": 10,
+            "long_nights": 4,
+            "streak_days": 2,
+        },
+        {
+            "node_id": "history",
+            "name": "校史馆",
+            "short_name": "校史馆",
+            "required_records": 14,
+            "dorm_nights": 5,
+            "goal_days": 3,
+        },
+        {
+            "node_id": "library",
+            "name": "图书馆",
+            "short_name": "图书馆",
+            "required_records": 18,
+            "long_nights": 8,
+            "min_total_hours": 110,
+        },
+        {
+            "node_id": "hall",
+            "name": "百周年纪念讲堂",
+            "short_name": "百讲",
+            "required_records": 24,
+            "nap_records": 3,
+            "goal_days": 5,
+            "streak_days": 4,
+        },
+        {
+            "node_id": "field",
+            "name": "五四操场",
+            "short_name": "五四操场",
+            "required_records": 30,
+            "long_nights": 14,
+            "min_total_hours": 190,
+            "streak_days": 7,
+        },
     )
 
     def __init__(self, tracker: MainTracker) -> None:

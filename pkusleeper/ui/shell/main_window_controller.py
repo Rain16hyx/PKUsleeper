@@ -3,7 +3,8 @@
 from __future__ import annotations
 from pathlib import Path
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, Qt
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -57,6 +58,7 @@ class MainWindowController:
         self.tracker = tracker
         self.bridge = ServiceBridge(tracker)
         self.window = load_ui(Path(__file__).with_name("main_menu.ui"))
+        self._apply_sidebar_assets()
         self.stack = self.window.findChild(QStackedWidget, "stackedWidget")
         if self.stack is None:
             raise RuntimeError("main_menu.ui 必须包含一个名为 stackedWidget 的 QStackedWidget 控件。")
@@ -73,6 +75,51 @@ class MainWindowController:
 
     def show(self) -> None:
         self.window.show()
+
+    def _apply_sidebar_assets(self) -> None:
+        assets_dir = Path(__file__).resolve().parents[1] / "assets"
+        sidebar_path = (assets_dir / "sidebar.png").as_posix()
+        logo_path = assets_dir / "pkulogo.png"
+
+        self.window.setStyleSheet(
+            self.window.styleSheet()
+            + f"""
+
+QFrame#sidebar {{
+    border-image: url("{sidebar_path}") 0 0 0 0 stretch stretch;
+    background: #a60f16;
+    border: none;
+}}
+"""
+        )
+
+        app_mark = self.window.findChild(QLabel, "appMark")
+        if app_mark is None or not logo_path.exists():
+            return
+
+        logo = QPixmap(str(logo_path))
+        if logo.isNull():
+            return
+
+        app_mark.setText("")
+        app_mark.setFixedSize(44, 44)
+        app_mark.setStyleSheet(
+            """
+            #appMark {
+                background: rgba(255, 238, 214, 0.92);
+                border-radius: 22px;
+            }
+            """
+        )
+        app_mark.setPixmap(
+            logo.scaled(
+                36,
+                36,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+        )
+        app_mark.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     def switch_page(self, page_name: str) -> None:
         """切换右侧内容页，并刷新当前页数据。"""

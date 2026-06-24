@@ -29,8 +29,7 @@
 }
 
 #sidebar {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-        stop:0 #9e1017, stop:0.55 #b5161d, stop:1 #8f0c13);
+    background: #a60f16;
     border: none;
 }
 

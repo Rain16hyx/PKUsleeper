@@ -181,7 +181,7 @@ class SleepRecordRepository:
             "map": {
                 "unlocked_node_ids": [],
                 "unlocked_count": None,
-                "total_count": 4,
+                "total_count": 8,
                 "recommended_node": None,
             },
         }

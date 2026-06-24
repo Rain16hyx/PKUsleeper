@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Callable
 import re
 
 import pyqtgraph as pg
 from PySide6.QtCore import QEvent, QObject, QTime, Qt
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -36,6 +38,17 @@ NavigateCallback = Callable[[str], None]
 RefreshCallback = Callable[[], None]
 
 
+class HeroBackgroundFilter(QObject):
+    def __init__(self, callback: Callable[[], None], parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.callback = callback
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() in (QEvent.Type.Resize, QEvent.Type.Show):
+            self.callback()
+        return super().eventFilter(watched, event)
+
+
 class HomeController(UiController):
     def __init__(
         self,
@@ -47,8 +60,13 @@ class HomeController(UiController):
         super().__init__(page, bridge)
         self.navigate = navigate
         self.refresh_all = refresh_all
+        self._hero_frame: QFrame | None = None
+        self._hero_background_label: QLabel | None = None
+        self._hero_background_pixmap: QPixmap | None = None
+        self._hero_background_filter: HeroBackgroundFilter | None = None
 
     def bind_events(self) -> None:
+        self._apply_hero_background()
         self.connect_button("pushButton_8", self.toggle_sleep)
         self.connect_button("pushButton_2", lambda: self.navigate("analysis"))
         self.connect_button("pushButton_3", lambda: self.navigate("planning"))
@@ -83,3 +101,70 @@ class HomeController(UiController):
         if not result.ok:
             self.warning("睡眠记录", result.message)
         self.refresh_all()
+
+    def _apply_hero_background(self) -> None:
+        hero_frame = self.page.findChild(QFrame, "frame")
+        if hero_frame is None:
+            return
+
+        image_path = (
+            Path(__file__).resolve().parents[2]
+            / "assets"
+            / "homepage_buttonback.png"
+        )
+        if not image_path.exists():
+            return
+
+        pixmap = QPixmap(str(image_path))
+        if pixmap.isNull():
+            return
+
+        hero_frame.setStyleSheet(
+            """
+            QFrame#frame {
+                border: 1px solid #ead9c5;
+                border-radius: 13px;
+                background: #fffaf3;
+            }
+            """
+        )
+        self.set_label_text("moonLabel", "")
+
+        background_label = QLabel(hero_frame)
+        background_label.setObjectName("heroBackgroundLabel")
+        background_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        background_label.lower()
+
+        self._hero_frame = hero_frame
+        self._hero_background_label = background_label
+        self._hero_background_pixmap = pixmap
+        self._hero_background_filter = HeroBackgroundFilter(self._update_hero_background, hero_frame)
+        hero_frame.installEventFilter(self._hero_background_filter)
+        self._update_hero_background()
+
+    def _update_hero_background(self) -> None:
+        if (
+            self._hero_frame is None
+            or self._hero_background_label is None
+            or self._hero_background_pixmap is None
+        ):
+            return
+
+        width = self._hero_frame.width()
+        height = self._hero_frame.height()
+        if width <= 0 or height <= 0:
+            return
+
+        scaled = self._hero_background_pixmap.scaled(
+            width,
+            height,
+            Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        x = max(0, (scaled.width() - width) // 2)
+        y = max(0, (scaled.height() - height) // 2)
+        cropped = scaled.copy(x, y, width, height)
+
+        self._hero_background_label.setGeometry(0, 0, width, height)
+        self._hero_background_label.setPixmap(cropped)
+        self._hero_background_label.lower()
