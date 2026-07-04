@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Callable
 
-from PySide6.QtCore import QEvent, QObject, QTime, Qt
+from PySide6.QtCore import QEvent, QObject, QRectF, QTime, Qt
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtWidgets import (
+    QDialog,
+    QDialogButtonBox,
     QFrame,
     QGridLayout,
     QHBoxLayout,
@@ -13,6 +18,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QPushButton,
+    QTimeEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -40,11 +46,58 @@ class ClickableRowFilter(QObject):
         return super().eventFilter(watched, event)
 
 
+class RoundedBackgroundFilter(QObject):
+    """为当前目标卡片绘制圆角背景图，避免 stylesheet 拉伸变形。"""
+
+    def __init__(self, image_path: Path, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.pixmap = QPixmap(str(image_path))
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() != QEvent.Type.Paint or not isinstance(watched, QWidget):
+            return super().eventFilter(watched, event)
+
+        painter = QPainter(watched)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+
+        rect = QRectF(watched.rect()).adjusted(0.5, 0.5, -0.5, -0.5)
+        path = QPainterPath()
+        path.addRoundedRect(rect, 13, 13)
+
+        painter.fillPath(path, QColor("#fffdf9"))
+        if not self.pixmap.isNull():
+            painter.setClipPath(path)
+            painter.drawPixmap(rect, self.pixmap, self._source_rect(rect))
+            painter.setClipping(False)
+
+        painter.setPen(QPen(QColor("#e5d9cc"), 1))
+        painter.drawPath(path)
+        return True
+
+    def _source_rect(self, target: QRectF) -> QRectF:
+        pixmap_width = self.pixmap.width()
+        pixmap_height = self.pixmap.height()
+        if pixmap_width <= 0 or pixmap_height <= 0 or target.height() <= 0:
+            return QRectF()
+
+        target_ratio = target.width() / target.height()
+        pixmap_ratio = pixmap_width / pixmap_height
+        if pixmap_ratio > target_ratio:
+            source_width = pixmap_height * target_ratio
+            source_x = (pixmap_width - source_width) * 0.5
+            return QRectF(source_x, 0, source_width, pixmap_height)
+
+        source_height = pixmap_width / target_ratio
+        source_y = (pixmap_height - source_height) * 0.5
+        return QRectF(0, source_y, pixmap_width, source_height)
+
+
 
 class GoalController(UiController):
     DOT_NAMES = ["doneDot", "doneDot_2", "doneDot_3", "doneDot_4", "doneDot_5", "emptyDot", "emptyDot_2"]
 
     def bind_events(self) -> None:
+        self._apply_current_goal_background()
         self._bind_clickable_row("settingRow", self._on_change_duration)
         self._bind_clickable_row("settingRow_2", self._on_change_start_time)
         self._bind_clickable_row("settingRow_3", self._on_change_wake_time)
@@ -156,6 +209,82 @@ class GoalController(UiController):
             widget.setCursor(Qt.PointingHandCursor)
             widget.installEventFilter(click_filter)
         self._row_click_filters.append(click_filter)
+
+    def _apply_current_goal_background(self) -> None:
+        frame = self.page.findChild(QFrame, "currentGoalFrame")
+        if frame is None:
+            return
+
+        background_path = Path(__file__).resolve().parents[2] / "assets" / "goal_current_bg.png"
+        frame.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        frame.setStyleSheet(
+            """
+            #currentGoalFrame {
+                border: none;
+                background: transparent;
+            }
+            """
+        )
+        background_filter = RoundedBackgroundFilter(background_path, frame)
+        frame.installEventFilter(background_filter)
+        self._current_goal_background_filter = background_filter
+
+        layout = self.page.findChild(QVBoxLayout, "currentGoalLayout")
+        if layout is not None:
+            layout.setContentsMargins(34, 40, 34, 34)
+            layout.setSpacing(70)
+            layout.setStretch(0, 0)
+            layout.setStretch(1, 1)
+
+        icon = self.label("targetIcon")
+        if icon is not None:
+            icon.hide()
+
+        content_layout = self.page.findChild(QHBoxLayout, "currentGoalContent")
+        if content_layout is not None:
+            content_layout.setContentsMargins(0, 0, 150, 0)
+            content_layout.setSpacing(0)
+
+        divider = self.page.findChild(QFrame, "line")
+        if divider is not None:
+            divider.hide()
+
+        styles = {
+            "cardTitle": "color: #242328; font-size: 20px; font-weight: 800;",
+            "goalNameLabel": "color: #242328; font-size: 18px; font-weight: 800;",
+            "goalValueLabel": "color: #c70812; font-size: 60px; font-weight: 900;",
+            "goalUnitLabel": "color: #242328; font-size: 19px; font-weight: 700;",
+            "recommendLabel": "color: #c70812; font-size: 16px; font-weight: 800;",
+        }
+        for name, style in styles.items():
+            label = self.label(name)
+            if label is not None:
+                label.setStyleSheet(style)
+
+        separator = self.page.findChild(QFrame, "line_2")
+        if separator is not None:
+            separator.setFixedHeight(1)
+            separator.setStyleSheet("color: #d8d1cb; background: #d8d1cb;")
+
+        goal_text_layout = self.page.findChild(QVBoxLayout, "goalTextLayout")
+        if goal_text_layout is not None:
+            goal_text_layout.setSpacing(18)
+            if not hasattr(self, "_goal_text_stretch_added"):
+                goal_text_layout.addStretch(1)
+                self._goal_text_stretch_added = True
+
+        if content_layout is not None and goal_text_layout is not None:
+            content_layout.setAlignment(
+                goal_text_layout,
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop,
+            )
+
+        goal_value_layout = self.page.findChild(QHBoxLayout, "goalValueLayout")
+        if goal_value_layout is not None:
+            goal_value_layout.setSpacing(10)
+            if not hasattr(self, "_goal_value_stretch_added"):
+                goal_value_layout.addStretch(1)
+                self._goal_value_stretch_added = True
 
     def _duration_from_label(self) -> float:
         label = self.label("settingValue")
