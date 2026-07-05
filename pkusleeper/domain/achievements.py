@@ -14,7 +14,7 @@ class SleepAchievement:
     demands: dict[str, Any]
 
     def fulfilled_by(self, record: SleepRecord) -> bool:
-        """Return whether this record satisfies the achievement condition."""
+        """判断该记录是否满足成就条件。"""
         aggregate_keys = {
             "min_records",
             "min_night_records",

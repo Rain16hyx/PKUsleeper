@@ -90,6 +90,7 @@ class ReportController(ReportChartMixin, UiController):
         self.set_label_text("statValue_2", dashboard.get("avg_sleep_time", "--:--"))
         self.set_label_text("statValue_3", dashboard.get("avg_wake_time", "--:--"))
         self.set_label_text("statValue_4", str(dashboard.get("goal_completion_rate", 0)))
+        self._render_stat_changes(dashboard.get("changes", {}))
         self.set_label_text("ringLabel", f"{dashboard.get('record_days', 0)} 天")
         self.set_label_text("ringLabel_2", f"{dashboard.get('score', 0)}\n分")
         self.set_label_text("ringLabel_3", f"{dashboard.get('completed_days', 0)}/{self.current_days}")
@@ -103,21 +104,42 @@ class ReportController(ReportChartMixin, UiController):
 
 
     def _ensure_report_bottom(self) -> None:
-        if self.page.findChild(QWidget, "qualityFrame") is not None:
-            return
-
         root_layout = self.page.findChild(QVBoxLayout, "verticalLayout")
         if root_layout is None:
             return
 
-        bottom = QFrame()
-        bottom.setObjectName("bottomReportFrame")
-        bottom_layout = QHBoxLayout(bottom)
-        bottom_layout.setContentsMargins(0, 0, 0, 0)
-        bottom_layout.setSpacing(16)
-        bottom_layout.addWidget(self._create_quality_frame(), 1)
-        bottom_layout.addWidget(self._create_summary_frame(), 1)
-        root_layout.addWidget(bottom)
+        bottom = self.page.findChild(QFrame, "bottomReportFrame")
+        if bottom is None:
+            bottom = QFrame()
+            bottom.setObjectName("bottomReportFrame")
+            bottom_layout = QHBoxLayout(bottom)
+            bottom_layout.setContentsMargins(0, 0, 0, 0)
+            bottom_layout.setSpacing(16)
+            bottom_layout.addWidget(self._create_quality_frame(), 1)
+            bottom_layout.addWidget(self._create_summary_frame(), 1)
+            root_layout.addWidget(bottom, 1)
+
+        self._configure_report_layout()
+
+
+    def _configure_report_layout(self) -> None:
+        root_layout = self.page.findChild(QVBoxLayout, "verticalLayout")
+        if root_layout is not None:
+            root_layout.setSpacing(14)
+            for index, stretch in enumerate((0, 0, 0, 1, 1)):
+                if index < root_layout.count():
+                    root_layout.setStretch(index, stretch)
+
+        for name in ("durationChartFrame", "timeChartFrame"):
+            frame = self.page.findChild(QFrame, name)
+            if frame is not None:
+                frame.setMinimumHeight(176)
+                frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+        bottom = self.page.findChild(QFrame, "bottomReportFrame")
+        if bottom is not None:
+            bottom.setMinimumHeight(212)
+            bottom.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
 
     def _create_quality_frame(self) -> QFrame:
@@ -137,8 +159,8 @@ class ReportController(ReportChartMixin, UiController):
             """
         )
         layout = QVBoxLayout(frame)
-        layout.setContentsMargins(20, 16, 20, 16)
-        layout.setSpacing(10)
+        layout.setContentsMargins(18, 14, 18, 14)
+        layout.setSpacing(7)
 
         title = QLabel("睡眠质量分析")
         title.setObjectName("chartTitle_3")
@@ -146,28 +168,28 @@ class ReportController(ReportChartMixin, UiController):
         layout.addWidget(title)
 
         rings = QHBoxLayout()
-        rings.setSpacing(18)
+        rings.setSpacing(14)
         for title_text, label_name in [
             ("记录天数", "ringLabel"),
             ("平均评分", "ringLabel_2"),
             ("达标天数", "ringLabel_3"),
         ]:
             column = QVBoxLayout()
+            column.setSpacing(6)
             label_title = QLabel(title_text)
             label_title.setAlignment(Qt.AlignCenter)
-            label_title.setStyleSheet("font-size: 15px; font-weight: 800;")
+            label_title.setStyleSheet("font-size: 14px; font-weight: 800;")
             value = QLabel("--")
             value.setObjectName(label_name)
+            value.setFixedSize(86, 86)
             value.setAlignment(Qt.AlignCenter)
             value.setStyleSheet(
                 """
-                min-width: 82px;
-                min-height: 82px;
-                border-radius: 41px;
-                border: 8px solid #f0a12d;
+                border-radius: 43px;
+                border: 7px solid #f0a12d;
                 background: #fffefd;
                 color: #b8151d;
-                font-size: 24px;
+                font-size: 23px;
                 font-weight: 900;
                 """
             )
@@ -182,7 +204,8 @@ class ReportController(ReportChartMixin, UiController):
 
         hint = QLabel("达标标准：睡眠时长不少于 7.0 小时")
         hint.setObjectName("qualityHint")
-        hint.setStyleSheet("color: #8a817a; font-size: 13px;")
+        hint.setWordWrap(True)
+        hint.setStyleSheet("color: #8a817a; font-size: 12px;")
         layout.addWidget(hint)
         return frame
 
@@ -204,8 +227,8 @@ class ReportController(ReportChartMixin, UiController):
             """
         )
         layout = QVBoxLayout(frame)
-        layout.setContentsMargins(20, 16, 20, 16)
-        layout.setSpacing(10)
+        layout.setContentsMargins(18, 14, 18, 14)
+        layout.setSpacing(8)
 
         title = QLabel("本期总结")
         title.setStyleSheet("font-size: 18px; font-weight: 800;")
@@ -213,24 +236,27 @@ class ReportController(ReportChartMixin, UiController):
 
         for idx in range(1, 4):
             row = QFrame()
+            row.setMinimumHeight(42)
             row.setStyleSheet("background: #fffefa; border: 1px solid #ead9c5; border-radius: 8px;")
             row_layout = QHBoxLayout(row)
-            row_layout.setContentsMargins(12, 8, 12, 8)
-            row_layout.setSpacing(10)
+            row_layout.setContentsMargins(10, 6, 10, 6)
+            row_layout.setSpacing(8)
             icon = QLabel(["✓", "☾", "☀"][idx - 1])
             icon.setAlignment(Qt.AlignCenter)
+            icon.setFixedSize(28, 28)
             icon.setStyleSheet(
-                "min-width: 30px; min-height: 30px; border-radius: 15px; "
-                "background: #fff4e2; color: #eba73b; font-size: 18px; font-weight: 900;"
+                "border-radius: 14px; background: #fff4e2; color: #eba73b; "
+                "font-size: 17px; font-weight: 900;"
             )
             title_label = QLabel()
             title_label.setObjectName("summaryTitle" if idx == 1 else f"summaryTitle_{idx}")
-            title_label.setMinimumWidth(110)
-            title_label.setStyleSheet("font-size: 15px; font-weight: 800;")
+            title_label.setFixedWidth(92)
+            title_label.setStyleSheet("font-size: 14px; font-weight: 800;")
             text_label = QLabel()
             text_label.setObjectName("summaryText" if idx == 1 else f"summaryText_{idx}")
             text_label.setWordWrap(True)
-            text_label.setStyleSheet("color: #7f7771; font-size: 13px;")
+            text_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+            text_label.setStyleSheet("color: #7f7771; font-size: 12px;")
             row_layout.addWidget(icon)
             row_layout.addWidget(title_label)
             row_layout.addWidget(text_label, 1)
@@ -251,6 +277,48 @@ class ReportController(ReportChartMixin, UiController):
             suffix = "" if idx == 1 else f"_{idx}"
             self.set_label_text(f"summaryTitle{suffix}", title)
             self.set_label_text(f"summaryText{suffix}", text)
+
+
+    def _render_stat_changes(self, changes: dict[str, dict[str, object]]) -> None:
+        label_map = [
+            ("statChange", "avg_sleep_hours"),
+            ("statChange_2", "avg_sleep_time"),
+            ("statChange_3", "avg_wake_time"),
+            ("statChange_4", "goal_completion_rate"),
+        ]
+        for label_name, key in label_map:
+            label = self.label(label_name)
+            if label is None:
+                continue
+
+            change = changes.get(key, {"available": False})
+            text, color = self._format_change(change)
+            label.setText(text)
+            label.setStyleSheet(f"color: {color}; font-size: 14px; font-weight: 700;")
+
+
+    def _format_change(self, change: dict[str, object]) -> tuple[str, str]:
+        if not change.get("available"):
+            return "暂无上期数据", "#9c918a"
+
+        delta = change.get("delta", 0)
+        if not isinstance(delta, (int, float)) or delta == 0:
+            return "较上期  持平", "#9c918a"
+
+        direction = "↑" if delta > 0 else "↓"
+        color = "#e34b17" if delta > 0 else "#459346"
+        sign = "+" if delta > 0 else "-"
+        abs_delta = abs(delta)
+        kind = change.get("kind")
+
+        if kind == "hours":
+            return f"较上期  {sign}{abs_delta:.1f} 小时 {direction}", color
+        if kind == "time":
+            minutes = int(abs_delta)
+            return f"较上期  {sign}{minutes // 60:02d}:{minutes % 60:02d} {direction}", color
+        if kind == "percent":
+            return f"较上期  {sign}{int(abs_delta)}% {direction}", color
+        return "较上期  持平", "#9c918a"
 
 
     def _update_range_style(self) -> None:

@@ -1,4 +1,4 @@
-"""Application entry point for the PySide6 UI."""
+"""PySide6 界面程序入口。"""
 
 from __future__ import annotations
 

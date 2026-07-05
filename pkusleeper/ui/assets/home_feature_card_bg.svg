@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="cardBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffefd"/>
+      <stop offset="0.58" stop-color="#fffaf5"/>
+      <stop offset="1" stop-color="#fff7ee"/>
+    </linearGradient>
+    <radialGradient id="warmGlow" cx="50%" cy="52%" r="68%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.84"/>
+      <stop offset="1" stop-color="#f8e9d8" stop-opacity="0.24"/>
+    </radialGradient>
+    <linearGradient id="hillFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f4d7b8" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#f7eadb" stop-opacity="0.22"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="1.5" y="1.5" width="1597" height="997" rx="34" fill="url(#cardBg)" stroke="#ead1bd" stroke-width="3"/>
+  <rect x="18" y="18" width="1564" height="964" rx="26" fill="url(#warmGlow)"/>
+
+  <path d="M0 782 C50 806 78 850 118 858 C174 868 190 928 255 894 C332 853 389 886 437 946 C506 925 570 938 638 1000 L0 1000 Z"
+        fill="url(#hillFill)"/>
+  <path d="M902 1000 C1005 974 1090 944 1172 952 C1235 959 1265 909 1324 902 C1375 895 1410 944 1450 910 C1510 858 1572 880 1600 928 L1600 1000 Z"
+        fill="url(#hillFill)" opacity="0.9"/>
+  <path d="M0 898 C88 866 161 878 230 918 C307 963 372 946 454 935 C548 924 616 952 701 1000 L0 1000 Z"
+        fill="#f8e6d1" opacity="0.34"/>
+  <path d="M1052 1000 C1144 970 1217 982 1290 957 C1374 928 1428 964 1494 976 C1534 984 1568 972 1600 956 L1600 1000 Z"
+        fill="#f8e4cf" opacity="0.34"/>
+
+  <g fill="#f0d3b7" opacity="0.45">
+    <path d="M1350 118 L1364 154 L1401 168 L1364 182 L1350 219 L1336 182 L1299 168 L1336 154 Z"/>
+    <path d="M1462 196 L1473 224 L1502 235 L1473 246 L1462 276 L1451 246 L1422 235 L1451 224 Z"/>
+    <path d="M1241 179 L1250 201 L1273 210 L1250 219 L1241 242 L1232 219 L1209 210 L1232 201 Z"/>
+  </g>
+</svg>

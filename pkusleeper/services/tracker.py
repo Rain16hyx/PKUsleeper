@@ -16,10 +16,9 @@ from pkusleeper.storage import SleepRecordRepository
 
 class MainTracker:
     """
-    Thin facade for UI and command-line entry points.
+    供 UI 和命令行入口使用的轻量门面。
 
-    It is reasonable to keep this controller as long as it coordinates services
-    instead of implementing every feature itself.
+    该类只负责协调各服务，不直接实现所有功能。
     """
 
     def __init__(
@@ -43,7 +42,7 @@ class MainTracker:
 
     @property
     def current_state(self) -> SleepingState | None:
-        """Backward-compatible access to the active sleep state."""
+        """兼容旧接口，访问当前睡眠状态。"""
         return self.sleep_manager.current_state
 
     @property
@@ -63,7 +62,7 @@ class MainTracker:
         return self.sleep_manager.all_records
 
     def shift_state(self, new_state: State | None) -> None:
-        """Switch UI/view state without changing the active sleep session."""
+        """切换 UI 视图状态，不影响当前睡眠会话。"""
         self.current_view_state = new_state
 
     def start_sleeping(
@@ -110,7 +109,7 @@ class MainTracker:
         return self.sleep_manager.is_sleeping()
 
     def get_ui_snapshot(self) -> dict[str, Any]:
-        """Return simple state data that a future UI can render directly."""
+        """返回可供 UI 直接渲染的简要状态数据。"""
         return {
             "user_id": self.user_id,
             "is_sleeping": self.is_sleeping(),

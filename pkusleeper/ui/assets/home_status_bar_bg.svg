@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 350" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffdf9"/>
+      <stop offset="0.58" stop-color="#fffaf4"/>
+      <stop offset="1" stop-color="#fff8ef"/>
+    </linearGradient>
+    <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffdf9" stop-opacity="0"/>
+      <stop offset="1" stop-color="#fff2e1" stop-opacity="0.72"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="1.5" y="1.5" width="1997" height="347" rx="28" fill="url(#bg)" stroke="#ead9c5" stroke-width="3"/>
+  <rect x="18" y="18" width="1964" height="314" rx="22" fill="url(#fade)" opacity="0.42"/>
+
+  <path d="M16 265 C70 225 113 210 160 222 C214 236 245 280 300 255 C345 235 380 255 420 292 L16 292 Z"
+        fill="#f4d9bb" opacity="0.36"/>
+  <path d="M24 294 C105 270 166 277 227 290 C300 305 370 303 455 292 C550 279 640 285 715 304 L24 304 Z"
+        fill="#f2dcc6" opacity="0.34"/>
+
+  <path d="M1450 304 C1535 284 1612 275 1685 292 C1754 309 1802 280 1855 266 C1900 255 1935 270 1980 296 L1980 323 L1450 323 Z"
+        fill="#f4d8ba" opacity="0.34"/>
+  <path d="M1520 315 C1602 298 1662 302 1724 316 C1808 335 1888 328 1978 313 L1978 333 L1520 333 Z"
+        fill="#f1d9c2" opacity="0.28"/>
+
+  <g opacity="0.25" fill="#efc99f">
+    <path d="M170 136 L181 161 L207 171 L181 181 L170 207 L160 181 L134 171 L160 161 Z"/>
+    <path d="M116 175 L123 190 L139 196 L123 202 L116 217 L110 202 L94 196 L110 190 Z"/>
+    <path d="M222 78 L227 91 L241 96 L227 101 L222 115 L217 101 L203 96 L217 91 Z"/>
+  </g>
+
+  <g opacity="0.34" fill="none" stroke="#efc99f" stroke-width="3" stroke-linecap="round">
+    <path d="M1742 150 C1765 128 1788 128 1811 150"/>
+    <path d="M1816 122 C1836 104 1856 104 1878 122"/>
+  </g>
+
+  <g opacity="0.22" fill="#e9c69e">
+    <rect x="1848" y="169" width="58" height="92" rx="4"/>
+    <path d="M1817 170 L1877 126 L1938 170 Z"/>
+    <path d="M1825 194 L1877 158 L1930 194 Z"/>
+    <path d="M1830 218 L1877 185 L1925 218 Z"/>
+    <path d="M1835 242 L1877 212 L1920 242 Z"/>
+    <rect x="1870" y="92" width="14" height="38" rx="3"/>
+  </g>
+
+  <line x1="666.67" y1="64" x2="666.67" y2="286" stroke="#ded4ca" stroke-width="4" stroke-linecap="round" opacity="0.95"/>
+  <line x1="1333.33" y1="64" x2="1333.33" y2="286" stroke="#ded4ca" stroke-width="4" stroke-linecap="round" opacity="0.95"/>
+</svg>

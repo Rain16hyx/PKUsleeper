@@ -18,8 +18,8 @@ class SleepInterruption:
 @dataclass(slots=True)
 class SleepSessionDraft:
     """
-    Mutable object used while the user is still sleeping.
-    It becomes a SleepRecord only after wake-up is confirmed.
+    睡眠进行中使用的可变对象。
+    用户确认醒来后转换为 SleepRecord。
     """
 
     user_id: str
@@ -35,7 +35,7 @@ class SleepSessionDraft:
 @dataclass(frozen=True, slots=True)
 class SleepRecord:
     """
-    Finalized sleep data stored after the sleeping flow ends.
+    睡眠流程结束后保存的最终记录。
     """
 
     record_id: str

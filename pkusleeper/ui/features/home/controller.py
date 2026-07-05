@@ -67,6 +67,8 @@ class HomeController(UiController):
 
     def bind_events(self) -> None:
         self._apply_hero_background()
+        self._apply_status_bar_background()
+        self._apply_feature_button_backgrounds()
         self.connect_button("pushButton_8", self.toggle_sleep)
         self.connect_button("pushButton_2", lambda: self.navigate("analysis"))
         self.connect_button("pushButton_3", lambda: self.navigate("planning"))
@@ -168,3 +170,70 @@ class HomeController(UiController):
         self._hero_background_label.setGeometry(0, 0, width, height)
         self._hero_background_label.setPixmap(cropped)
         self._hero_background_label.lower()
+
+    def _apply_status_bar_background(self) -> None:
+        status_frame = self.page.findChild(QFrame, "frame_2")
+        if status_frame is None:
+            return
+
+        image_path = (
+            Path(__file__).resolve().parents[2]
+            / "assets"
+            / "home_status_bar_bg.svg"
+        )
+        status_frame.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        status_frame.setStyleSheet(
+            f"""
+            QFrame#frame_2 {{
+                border: none;
+                border-image: url("{image_path.as_posix()}") 0 0 0 0 stretch stretch;
+                background: transparent;
+            }}
+            """
+        )
+
+        for name in ("line", "line_2"):
+            divider = self.page.findChild(QFrame, name)
+            if divider is not None:
+                divider.hide()
+
+    def _apply_feature_button_backgrounds(self) -> None:
+        image_path = (
+            Path(__file__).resolve().parents[2]
+            / "assets"
+            / "home_feature_card_bg.svg"
+        )
+        if not image_path.exists():
+            return
+
+        base_style = f"""
+            QPushButton {{
+                min-height: 96px;
+                padding: 14px 22px 14px 28px;
+                border: none;
+                border-image: url("{image_path.as_posix()}") 0 0 0 0 stretch stretch;
+                background: transparent;
+                color: #2c292c;
+                font-size: 18px;
+                font-weight: 700;
+                text-align: left;
+            }}
+            QPushButton:hover {{
+                color: #b8151d;
+            }}
+            QPushButton:pressed {{
+                color: #951017;
+                padding: 15px 22px 13px 28px;
+            }}
+        """
+        for name in (
+            "pushButton_2",
+            "pushButton_3",
+            "pushButton_4",
+            "pushButton_5",
+            "pushButton_6",
+            "pushButton_7",
+        ):
+            button = self.button(name)
+            if button is not None:
+                button.setStyleSheet(base_style)

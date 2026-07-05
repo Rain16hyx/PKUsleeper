@@ -5,7 +5,7 @@ from pkusleeper.states.base import State
 
 
 class AchievementState(State):
-    """State container for achievement display and evaluation data."""
+    """保存成就展示和评估数据的状态容器。"""
 
     def __init__(self) -> None:
         self.all_achievements: list[SleepAchievement] = []

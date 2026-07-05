@@ -49,9 +49,15 @@ class ClickableRowFilter(QObject):
 class RoundedBackgroundFilter(QObject):
     """为当前目标卡片绘制圆角背景图，避免 stylesheet 拉伸变形。"""
 
-    def __init__(self, image_path: Path, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        image_path: Path,
+        parent: QWidget | None = None,
+        horizontal_anchor: float = 0.5,
+    ) -> None:
         super().__init__(parent)
         self.pixmap = QPixmap(str(image_path))
+        self.horizontal_anchor = max(0.0, min(horizontal_anchor, 1.0))
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if event.type() != QEvent.Type.Paint or not isinstance(watched, QWidget):
@@ -84,7 +90,7 @@ class RoundedBackgroundFilter(QObject):
         pixmap_ratio = pixmap_width / pixmap_height
         if pixmap_ratio > target_ratio:
             source_width = pixmap_height * target_ratio
-            source_x = (pixmap_width - source_width) * 0.5
+            source_x = (pixmap_width - source_width) * self.horizontal_anchor
             return QRectF(source_x, 0, source_width, pixmap_height)
 
         source_height = pixmap_width / target_ratio
@@ -225,7 +231,7 @@ class GoalController(UiController):
             }
             """
         )
-        background_filter = RoundedBackgroundFilter(background_path, frame)
+        background_filter = RoundedBackgroundFilter(background_path, frame, horizontal_anchor=0.88)
         frame.installEventFilter(background_filter)
         self._current_goal_background_filter = background_filter
 

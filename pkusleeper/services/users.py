@@ -6,7 +6,7 @@ from pkusleeper.domain import Roommate, User
 
 
 class UserManager:
-    """Service for user profile, roommates, and schedule data."""
+    """管理用户资料、室友和课表数据的服务。"""
 
     def __init__(self, user_id: str) -> None:
         self.current_user = User(user_id=user_id, username="PKU student")

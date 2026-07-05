@@ -9,7 +9,7 @@ from pkusleeper.storage import SleepRecordRepository
 
 
 class SleepManager:
-    """Service responsible for the sleep-session workflow."""
+    """负责睡眠记录流程的服务。"""
 
     def __init__(
         self,

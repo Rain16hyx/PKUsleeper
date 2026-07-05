@@ -1,4 +1,4 @@
-"""Shared helpers for PySide6 UI controllers."""
+"""PySide6 页面控制器的共享辅助工具。"""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ T = TypeVar("T", bound=QWidget)
 
 
 def load_ui(path: Path) -> QWidget:
-    """Load a Qt Designer .ui file and return its root widget."""
+    """加载 Qt Designer 的 .ui 文件并返回根控件。"""
     file = QFile(str(path))
     if not file.open(QFile.OpenModeFlag.ReadOnly):
         raise FileNotFoundError(f"Cannot open UI file: {path}")
@@ -30,17 +30,17 @@ def load_ui(path: Path) -> QWidget:
 
 
 class UiController:
-    """Base class for page controllers."""
+    """页面控制器基类。"""
 
     def __init__(self, page: QWidget, bridge: object) -> None:
         self.page = page
         self.bridge = bridge
 
     def bind_events(self) -> None:
-        """Bind page-level signals. Subclasses may override."""
+        """绑定页面级信号，子类可按需重写。"""
 
     def refresh(self) -> None:
-        """Refresh displayed data. Subclasses may override."""
+        """刷新展示数据，子类可按需重写。"""
 
     def refresh_common_header(self) -> None:
         """刷新所有页面共用的顶部日期栏。"""

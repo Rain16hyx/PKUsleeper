@@ -91,12 +91,27 @@ class AchievementController(UiController):
         if self.page.findChild(QWidget, "statFrame_3") is None:
             stats_layout = self.page.findChild(QHBoxLayout, "statsLayout")
             if stats_layout is not None:
-                stats_layout.addWidget(self._create_points_frame())
+                stats_layout.addWidget(self._create_points_frame(), 1)
 
         if self.page.findChild(QWidget, "levelFrame") is None:
             root_layout = self.page.findChild(QVBoxLayout, "verticalLayout")
             if root_layout is not None:
                 root_layout.insertWidget(2, self._create_level_frame())
+
+        self._normalize_stat_cards()
+
+    def _normalize_stat_cards(self) -> None:
+        stats_layout = self.page.findChild(QHBoxLayout, "statsLayout")
+        if stats_layout is None:
+            return
+
+        for index, name in enumerate(("statFrame", "statFrame_2", "statFrame_3")):
+            frame = self.page.findChild(QFrame, name)
+            if frame is None:
+                continue
+            frame.setMinimumWidth(0)
+            frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+            stats_layout.setStretch(index, 1)
 
     def _create_points_frame(self) -> QFrame:
         frame = QFrame()

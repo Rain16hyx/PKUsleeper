@@ -37,6 +37,7 @@ class ServiceBridge(
             "short_name": "红楼",
             "required_records": 2,
             "min_total_hours": 10,
+            "intro": "始建于民国5年，原为北大学生宿舍，见证了北大的红色历史。"
         },
         {
             "node_id": "west",
@@ -45,6 +46,7 @@ class ServiceBridge(
             "required_records": 4,
             "night_records": 3,
             "min_total_hours": 22,
+            "intro": "北大最具特色的校门之一，是著名的打卡点，其古建风格展现着北大的人文底蕴。"
         },
         {
             "node_id": "stone_boat",
@@ -53,6 +55,7 @@ class ServiceBridge(
             "required_records": 7,
             "nap_records": 1,
             "min_total_hours": 40,
+            "intro": "位于未名湖湖心岛，是北大学子的休闲胜地，与湖光塔影相映成趣。"
         },
         {
             "node_id": "tower",
@@ -61,6 +64,7 @@ class ServiceBridge(
             "required_records": 10,
             "long_nights": 4,
             "streak_days": 2,
+            "intro": "位于未名湖畔，是北大最具标志性的建筑，原为水塔。"
         },
         {
             "node_id": "history",
@@ -69,6 +73,7 @@ class ServiceBridge(
             "required_records": 14,
             "dorm_nights": 5,
             "goal_days": 3,
+            "intro": "展示北京大学的历史沿革和重要事件，是了解北大的重要场所。"
         },
         {
             "node_id": "library",
@@ -77,6 +82,7 @@ class ServiceBridge(
             "required_records": 18,
             "long_nights": 8,
             "min_total_hours": 110,
+            "intro": "亚洲最大的单体图书馆，馆藏丰富，且适合考试周复习。"
         },
         {
             "node_id": "hall",
@@ -85,6 +91,7 @@ class ServiceBridge(
             "required_records": 24,
             "nap_records": 3,
             "goal_days": 5,
+            "intro": "北京大学的重要建筑之一，常举办各类学术和文化活动。",
             "streak_days": 4,
         },
         {
@@ -94,6 +101,7 @@ class ServiceBridge(
             "required_records": 30,
             "long_nights": 14,
             "min_total_hours": 190,
+            "intro": "北大唯一的大型操场，承载着北大学子的运动记忆（比如刷85km校园跑）。",
             "streak_days": 7,
         },
     )

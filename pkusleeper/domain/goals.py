@@ -15,5 +15,5 @@ class SleepGoal:
     nap_target_minutes: int = 30
 
     def fulfilled_by(self, record: SleepRecord) -> bool:
-        """Return whether this record satisfies the goal condition."""
+        """判断该记录是否满足目标条件。"""
         raise NotImplementedError

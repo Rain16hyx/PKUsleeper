@@ -5,7 +5,7 @@ from pkusleeper.states import AchievementState
 
 
 class AchievementManager:
-    """Service facade for achievement state."""
+    """成就状态的服务门面。"""
 
     def __init__(self, state: AchievementState | None = None) -> None:
         self._state = state if state is not None else AchievementState()
